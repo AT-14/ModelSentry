@@ -1,5 +1,8 @@
 # Demo Recording Checklist
 
+See `docs/DEMO_VIDEO_GUIDE.md` for complete recording, upload, and final-PDF
+instructions.
+
 Target duration: 3-4 minutes. Record at 1920x1080 with browser zoom at 100% or
 greater. Do not train a model during recording.
 

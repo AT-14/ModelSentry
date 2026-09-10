@@ -5,6 +5,16 @@ attacks against an image-classification API. It compares normal and malicious
 query streams, trains an attacker surrogate from API responses, and measures
 whether detection occurs before the surrogate reaches useful fidelity.
 
+## Versions
+
+| Version | Purpose | Headline result |
+|---|---|---:|
+| [V1](v1/README.md) | Historical gate-qualified baseline | 3/3 required high-volume attacks; 0/6 benign clients blocked |
+| [V2.4](v2/README.md) | Expanded multi-timescale holdout | 11/12 attacks; 0/90 benign sessions mitigated |
+
+See [the version comparison](VERSION_COMPARISON.md) for the protocol changes and
+the fair baseline-full versus Enhanced V2.4 comparison.
+
 ## Quick start
 
 ```powershell
@@ -175,6 +185,6 @@ evaluation, and fidelity evaluation are disjoint.
   privacy retention controls, and analyst review.
 
 See `docs/ARCHITECTURE.md`, `docs/DEMO_SCRIPT.md`, and
-`docs/PRESENTATION_SKELETON.md` for jury-facing material. The accepted V2.4
-holdout claim is documented in `docs/V2_HOLDOUT_RESULTS.md`; historical
-Baseline V1 evidence remains in `docs/VALIDATED_RESULTS.md`.
+`docs/DEMO_VIDEO_GUIDE.md` for jury-facing material. The accepted V2.4 holdout
+claim is documented in `docs/V2_HOLDOUT_RESULTS.md`; historical Baseline V1
+evidence remains in `docs/VALIDATED_RESULTS.md`.
