@@ -11,6 +11,8 @@ class EventStore:
         path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
         self.connection = sqlite3.connect(path, check_same_thread=False)
+        self.connection.execute("PRAGMA journal_mode=WAL")
+        self.connection.execute("PRAGMA busy_timeout=5000")
         self.connection.execute(
             """
             CREATE TABLE IF NOT EXISTS query_events (
@@ -31,8 +33,11 @@ class EventStore:
 
     def reset(self) -> None:
         with self._lock:
-            self.connection.execute("DELETE FROM query_events")
-            self.connection.commit()
+            with self.connection:
+                self.connection.execute("DELETE FROM query_events")
+                self.connection.execute(
+                    "DELETE FROM sqlite_sequence WHERE name = 'query_events'"
+                )
 
     def record(
         self,

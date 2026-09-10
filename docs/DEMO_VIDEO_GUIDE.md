@@ -35,14 +35,14 @@ streamlit run dashboard.py
 Open the API in a second PowerShell window:
 
 ```powershell
-python serve_api.py
+python serve_api.py --reset-db --require-checkpoint --demo-reset-token modelsentry-demo
 ```
 
 Check these pages before recording:
 
 - Dashboard: the URL printed by Streamlit, normally `http://localhost:8501`
-- API health: `http://127.0.0.1:8000/health`
-- Interactive API documentation: `http://127.0.0.1:8000/docs`
+- API health: `http://127.0.0.1:8765/health`
+- Interactive API documentation: `http://127.0.0.1:8765/docs`
 - GitHub versions: `v1/`, `v2/`, and `VERSION_COMPARISON.md`
 
 Close notifications, email, private browser tabs, and unrelated applications.
@@ -60,8 +60,8 @@ Use this order:
 |---|---|
 | 0:00-0:25 | Introduce model theft: an attacker can use API answers as labels for a copy. |
 | 0:25-0:55 | Show the API and explain prediction, monitoring, and allow/throttle/block actions. |
-| 0:55-1:25 | Show normal and batch traffic remaining available. |
-| 1:25-2:05 | Show the attack evidence, risk increase, alert reasons, and graduated mitigation. |
+| 0:55-1:25 | Run `python run_live_traffic.py reset`, then `python run_live_traffic.py normal`; show the green dashboard. |
+| 1:25-2:05 | Run `python run_live_traffic.py attack`; show the live alert, real elapsed seconds, replay ratio, and reasons. |
 | 2:05-2:50 | Show the frozen V2.4 comparison: 11/12 attacks and 0/90 benign mitigations. |
 | 2:50-3:15 | State that all fast, replay, and distributed runs were detected, but one slow run was missed. |
 | 3:15-3:35 | Show the GitHub `v1/` and `v2/` folders, then close with the value and roadmap. |
@@ -69,6 +69,16 @@ Use this order:
 Use `docs/DEMO_SCRIPT.md` as the full speaking guide. Do not train a model while
 recording. If the live dashboard fails, show `submission/dashboard_snapshot.png`
 and `submission/v2_holdout_comparison.png`.
+
+After the alert, demonstrate safe unexpected-input handling:
+
+```powershell
+python run_live_traffic.py invalid
+```
+
+The command must show HTTP 422 and confirm that the API remains healthy. Before
+the final recording, run `python run_live_traffic.py all` twice to verify a clean
+second run.
 
 ## 4. Review the recording
 
@@ -81,6 +91,8 @@ Before uploading, confirm:
 - The result is stated as 11/12, not 12/12.
 - The missed slow-adaptive run is stated plainly.
 - The repository URL is visible.
+- The normal and extraction phases are actual HTTP traffic, not screenshots.
+- AI narration, if used, is disclosed in the end credits.
 
 ## 5. Upload and share
 

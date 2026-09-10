@@ -62,7 +62,8 @@ unusual request.
 | Returned hard labels or probabilities | Yes |
 | Different surrogate architecture | Yes |
 | Direct weight or database access | No |
-| Account rotation / Sybil coordination | Future work |
+| Simulated organization-linked accounts | Evaluated in V2.4 |
+| Production identity resolution / Sybil resistance | Future work |
 | Production traffic drift | Future work |
 
 ## Privacy boundary

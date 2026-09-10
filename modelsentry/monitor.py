@@ -1,5 +1,6 @@
 from collections import defaultdict, deque
 from dataclasses import dataclass
+from typing import Protocol
 
 import numpy as np
 
@@ -23,6 +24,10 @@ class RiskAssessment:
     signals: dict[str, float]
     percentiles: dict[str, float]
     reasons: tuple[str, ...]
+
+
+class Monitor(Protocol):
+    def observe(self, client_id: str, record: QueryRecord) -> RiskAssessment: ...
 
 
 @dataclass(frozen=True)

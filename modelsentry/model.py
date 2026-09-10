@@ -52,7 +52,10 @@ def accuracy(model: nn.Module, dataset: Dataset, batch_size: int) -> float:
 
 
 def train_or_load_victim(
-    config: ExperimentConfig, train: Dataset, validation: Dataset
+    config: ExperimentConfig,
+    train: Dataset,
+    validation: Dataset,
+    require_checkpoint: bool = False,
 ) -> tuple[VictimCNN, float]:
     config.artifacts_dir.mkdir(parents=True, exist_ok=True)
     checkpoint_dir = config.checkpoint_dir or config.artifacts_dir
@@ -69,9 +72,26 @@ def train_or_load_victim(
     model = VictimCNN()
 
     if checkpoint.exists():
+        if require_checkpoint and not checksum_path.exists():
+            raise FileNotFoundError(
+                f"Required checkpoint checksum is missing: {checksum_path}"
+            )
+        if checksum_path.exists():
+            checksum_parts = checksum_path.read_text(encoding="ascii").split()
+            if not checksum_parts:
+                raise ValueError(f"Checkpoint checksum file is empty: {checksum_path}")
+            expected_digest = checksum_parts[0]
+            actual_digest = hashlib.sha256(checkpoint.read_bytes()).hexdigest()
+            if actual_digest != expected_digest:
+                raise ValueError(f"Checkpoint checksum mismatch: {checkpoint}")
         state = torch.load(checkpoint, map_location="cpu", weights_only=True)
         model.load_state_dict(state)
         return model.eval(), accuracy(model, validation, config.batch_size)
+
+    if require_checkpoint:
+        raise FileNotFoundError(
+            f"Required checkpoint is missing: {checkpoint}. Run the preflight first."
+        )
 
     loader = DataLoader(
         train,

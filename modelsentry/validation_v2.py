@@ -8,7 +8,6 @@ from unittest.mock import patch
 
 import numpy as np
 import torch
-from fastapi.testclient import TestClient
 
 from .api import create_app
 from .attack import _fit_surrogate, run_adaptive_extraction
@@ -518,6 +517,8 @@ def measure_latency(
     samples: int = 50,
     warmup: int = 5,
 ) -> dict:
+    from fastapi.testclient import TestClient
+
     service, store = new_service(
         model, profile, mode, output_dir / f"latency_service_{mode}.db"
     )

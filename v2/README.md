@@ -18,6 +18,11 @@ V2.4 detected all tested fast adaptive, replay, and distributed runs. It missed
 one slow-adaptive run on seed 1618. The result is accepted and reported as-is;
 it did not meet the original perfect-detection gate of 12/12.
 
+The live competition path runs Enhanced V2.4 behind FastAPI, drives normal and
+extraction profiles through actual HTTP requests, refreshes the dashboard every
+0.5 seconds, and shows the first alert with its signals and wall-clock time. See
+the [live demo verification](../docs/LIVE_DEMO_VERIFICATION.md).
+
 ## Fair improvement comparison
 
 Within the same V2 holdout protocol and traffic, Enhanced V2.4 improved over

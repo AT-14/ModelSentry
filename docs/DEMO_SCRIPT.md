@@ -6,30 +6,30 @@ Target duration: 3-4 minutes.
 
 "A government AI provider exposes a valuable image classifier through an API.
 An attacker can collect its answers and train a substitute without accessing its
-weights. ModelSentry detects the information-gathering behavior before that copy
-becomes useful."
+weights. ModelSentry detects systematic information gathering and limits what the
+attacker receives."
 
 ## 0:30-1:00 - Legitimate traffic
 
-1. Open the dashboard.
-2. Point to the healthy protected API.
-3. Show normal and high-volume batch clients.
-4. Emphasize that both remain fully served; this is not rate limiting alone.
+1. Open the dashboard and point to the live API health indicator.
+2. Run `python run_live_traffic.py reset`.
+3. Run `python run_live_traffic.py normal`.
+4. Show 75 real HTTP predictions and the green no-mitigation status.
 
-## 1:00-1:40 - Undefended theft
+## 1:00-1:40 - Extraction behavior
 
-1. Show the saved, reproducible undefended run.
-2. Explain that API answers become labels for a different surrogate model.
-3. Point to fidelity increasing with query budget.
-4. State the measured 71.78% mean final fidelity from the verified V2.4 holdout.
+1. Explain that API answers become labels for a different surrogate model.
+2. Run `python run_live_traffic.py attack`.
+3. Show the extraction request counter updating through actual HTTP requests.
+4. Point to the live replay ratio and model-aware evidence.
 
-## 1:40-2:40 - Same attack with ModelSentry
+## 1:40-2:40 - ModelSentry response
 
-1. Start or replay the identical seeded attack with defence enabled.
-2. Show query rate, boundary frequency, coverage, and acquisition evidence rising.
-3. Open the alert reasons.
-4. Show persistent evidence triggering throttle and block actions.
-5. Point out that ordinary clients remain available.
+1. Show the alert at extraction query 102 and its real wall-clock time.
+2. Read the triggering reasons, including the repeated-query ratio.
+3. Show the throttle action and denied response count.
+4. Run `python run_live_traffic.py invalid`.
+5. Show HTTP 422 and confirm that the API remains healthy.
 
 ## 2:40-3:20 - Security outcome
 

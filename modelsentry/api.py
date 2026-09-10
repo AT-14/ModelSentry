@@ -1,4 +1,6 @@
 import time
+from collections.abc import Callable
+from secrets import compare_digest
 from typing import Annotated
 
 import numpy as np
@@ -26,10 +28,15 @@ class PredictionOutput(BaseModel):
     reasons: list[str]
 
 
-def create_app(service: PredictionService) -> FastAPI:
+def create_app(
+    service: PredictionService,
+    *,
+    reset_service: Callable[[], None] | None = None,
+    demo_reset_token: str | None = None,
+) -> FastAPI:
     app = FastAPI(
         title="ModelSentry protected inference API",
-        version="0.1.0",
+        version="0.2.0",
     )
 
     @app.get("/health")
@@ -49,7 +56,7 @@ def create_app(service: PredictionService) -> FastAPI:
                 api_key,
                 image,
                 # Public clients must not control timestamps used by rate detection.
-                time.time(),
+                time.monotonic(),
             )
         except ValueError as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
@@ -67,5 +74,18 @@ def create_app(service: PredictionService) -> FastAPI:
             action=response.assessment.action,
             reasons=list(response.assessment.reasons),
         )
+
+    if reset_service is not None and demo_reset_token:
+
+        @app.post("/demo/reset")
+        def reset_demo(
+            supplied_token: Annotated[str | None, Header(alias="X-Demo-Token")] = None,
+        ) -> dict[str, str]:
+            if supplied_token is None or not compare_digest(
+                supplied_token, demo_reset_token
+            ):
+                raise HTTPException(status_code=403, detail="Invalid demo reset token")
+            reset_service()
+            return {"status": "reset"}
 
     return app

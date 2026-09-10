@@ -3,7 +3,7 @@
 ModelSentry is a reproducible proof of concept for detecting model-extraction
 attacks against an image-classification API. It compares normal and malicious
 query streams, trains an attacker surrogate from API responses, and measures
-whether detection occurs before the surrogate reaches useful fidelity.
+whether monitoring limits information leakage.
 
 ## Versions
 
@@ -29,19 +29,34 @@ runs reuse the mode- and seed-specific checkpoint in `artifacts/`. Each new
 checkpoint includes JSON metadata and a SHA-256 checksum for safe transfer from
 Colab or another team member's computer.
 
-Start the HTTP API after the checkpoint exists:
+Start the Enhanced V2.4 HTTP API after the checkpoint exists:
 
 ```powershell
-python serve_api.py
+python serve_api.py --reset-db --require-checkpoint --demo-reset-token modelsentry-demo
 ```
 
-Open `http://127.0.0.1:8000/docs` for the interactive API documentation.
+Open `http://127.0.0.1:8765/docs` for the interactive API documentation.
 
 View results from the most recent experiment:
 
 ```powershell
 streamlit run dashboard.py
 ```
+
+In another terminal, prove the required live sequence over HTTP:
+
+```powershell
+python run_live_traffic.py reset
+python run_live_traffic.py normal
+python run_live_traffic.py attack
+python run_live_traffic.py invalid
+```
+
+The dashboard refreshes every 0.5 seconds. Normal traffic remains green, the
+replay-style extraction run alerts at query 102, and the invalid request returns
+HTTP 422 without stopping the API. Use `python run_live_traffic.py all` for a
+single-command traffic run. See `docs/LIVE_DEMO_VERIFICATION.md` for the
+two-run wall-clock verification.
 
 Run a three-seed local validation with reduced settings:
 
@@ -92,8 +107,8 @@ They can create multiple valid images, observe returned labels or probabilities,
 and train a different local model. They cannot read the victim's weights,
 training set, process memory, or event database.
 
-ModelSentry aims to identify sustained extraction behavior before the substitute
-model reaches high fidelity. It does not claim perfect detection of patient or
+ModelSentry aims to identify sustained extraction behavior and limit returned
+information. It does not claim perfect detection of patient or
 in-distribution attackers. V2.4 correlates simulated linked accounts, but a
 production identity resolver remains future work.
 
@@ -101,6 +116,12 @@ All attacks in this repository target the locally owned demonstration model.
 Do not run extraction traffic against third-party services without authorization.
 
 ## Commands
+
+Run the live Enhanced V2.4 HTTP traffic sequence:
+
+```powershell
+python run_live_traffic.py all
+```
 
 Run the complete CPU-friendly demonstration:
 

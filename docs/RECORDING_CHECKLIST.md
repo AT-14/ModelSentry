@@ -17,11 +17,11 @@ streamlit run dashboard.py
 In a second terminal, start the API if it is part of the recording:
 
 ```powershell
-python serve_api.py
+python serve_api.py --reset-db --require-checkpoint --demo-reset-token modelsentry-demo
 ```
 
-Verify the dashboard, `http://127.0.0.1:8000/health`, and
-`http://127.0.0.1:8000/docs` before recording. Close notifications and unrelated
+Verify the dashboard, `http://127.0.0.1:8765/health`, and
+`http://127.0.0.1:8765/docs` before recording. Close notifications and unrelated
 applications. Keep `artifacts/validation_extended_v2_holdout` as the source of
 V2.4 aggregate claims and `artifacts/validation_corrected` unchanged as the
 historical Baseline V1 source.
@@ -29,10 +29,10 @@ historical Baseline V1 source.
 ## Recording order
 
 1. Introduce the API model-theft problem and ModelSentry in 30 seconds.
-2. Show normal and legitimate batch clients remaining available.
-3. Show the saved undefended extraction curve reaching high fidelity.
-4. Replay or show the identical defended campaign and its alert reasons.
-5. Show throttle/block enforcement and the responses prevented.
+2. Run `python run_live_traffic.py reset` and show the empty green dashboard.
+3. Run `python run_live_traffic.py normal` and show that it remains green.
+4. Run `python run_live_traffic.py attack` and show the live alert and reasons.
+5. Run `python run_live_traffic.py invalid` and show HTTP 422 plus healthy API.
 6. End on 11/12 detections and 0/90 benign mitigations, then state that one
    slow-adaptive run was missed.
 

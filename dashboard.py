@@ -2,8 +2,11 @@ import json
 import sqlite3
 from pathlib import Path
 
+import httpx
 import pandas as pd
 import streamlit as st
+
+from modelsentry.live import read_live_state
 
 
 ARTIFACTS = Path("artifacts")
@@ -16,6 +19,8 @@ VALIDATION_DIR = (
 VALIDATION_SUMMARY = VALIDATION_DIR / "validation_summary.json"
 V2_HOLDOUT_DIR = ARTIFACTS / "validation_extended_v2_holdout"
 V2_HOLDOUT_SUMMARY = V2_HOLDOUT_DIR / "validation_summary_v2.json"
+LIVE_DATABASE = ARTIFACTS / "live_demo.db"
+API_HEALTH = "http://127.0.0.1:8765/health"
 
 st.set_page_config(page_title="ModelSentry", page_icon="MS", layout="wide")
 st.markdown(
@@ -64,6 +69,83 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+
+@st.fragment(run_every=0.5)
+def render_live_monitor() -> None:
+    state = read_live_state(LIVE_DATABASE)
+    try:
+        api_online = httpx.get(API_HEALTH, timeout=0.4).status_code == 200
+    except httpx.HTTPError:
+        api_online = False
+
+    st.subheader("Live competition demo")
+    if api_online:
+        st.caption("API health: online | Dashboard refresh: 0.5 seconds")
+    else:
+        st.warning(
+            "API is offline. Start `python serve_api.py --reset-db "
+            "--require-checkpoint --demo-reset-token modelsentry-demo`."
+        )
+
+    if state.get("error"):
+        st.info("Live event database is updating. The dashboard will retry automatically.")
+        return
+
+    phase = state["phase"]
+    if phase == "ready":
+        st.success("READY: no suspicious traffic. Start the normal traffic phase.")
+    elif phase == "normal":
+        st.success("GREEN: normal traffic is allowed with no throttle or block.")
+    elif phase == "attack":
+        st.warning("EXTRACTION ACTIVE: behavior is being evaluated in real time.")
+    else:
+        alert = state["alert"]
+        if "attack_query" in alert:
+            st.error(
+                f"ALERT: {alert['action'].upper()} at extraction query "
+                f"{alert['attack_query']} after "
+                f"{alert['elapsed_seconds']:.2f} real seconds."
+            )
+        else:
+            st.error(
+                f"ALERT: {alert['action'].upper()} for client {alert['client_id']}."
+            )
+
+    columns = st.columns(4)
+    columns[0].metric("Total HTTP predictions", state["total_requests"])
+    columns[1].metric("Normal requests", state["normal_requests"])
+    columns[2].metric("Extraction requests", state["attack_requests"])
+    columns[3].metric("Denied responses", state["denied_requests"])
+
+    selected = state["alert"] or state["latest"]
+    if selected is not None:
+        signals = selected["signals"]
+        signal_columns = st.columns(5)
+        signal_columns[0].metric("Risk", f"{selected['risk']:.3f}")
+        signal_columns[1].metric("Query rate", f"{signals.get('rate', 0.0):.1f}/s")
+        signal_columns[2].metric("Replay ratio", f"{signals.get('repetition', 0.0):.1%}")
+        signal_columns[3].metric("Boundary share", f"{signals.get('boundary', 0.0):.1%}")
+        signal_columns[4].metric(
+            "Linked accounts", f"{signals.get('linked_accounts', 1.0):.0f}"
+        )
+        if selected["reasons"]:
+            evidence = "; ".join(selected["reasons"])
+            if phase == "alert":
+                st.error("Triggering evidence: " + evidence)
+            else:
+                st.caption("Observed telemetry: " + evidence)
+
+    if state["recent_events"]:
+        with st.expander("Latest HTTP prediction events"):
+            recent = pd.DataFrame(state["recent_events"])
+            recent["reasons"] = recent.pop("reasons_json").map(
+                lambda value: "; ".join(json.loads(value))
+            )
+            st.dataframe(recent, hide_index=True, width="stretch")
+
+
+render_live_monitor()
+
 if not RESULTS.exists():
     st.warning("Run `python run_demo.py --quick` to generate experiment evidence.")
     st.stop()
@@ -77,8 +159,6 @@ defended = results["defended_attack"]
 normal = results["normal_client"]
 batch = results["batch_client"]
 
-st.markdown('<span class="status-good">PROTECTED API ONLINE</span>', unsafe_allow_html=True)
-st.write("")
 columns = st.columns(5)
 columns[0].metric("Attack detected", "YES" if summary["attack_detected"] else "NO")
 columns[1].metric("First alert", f"Query {defended['first_alert_query']}")

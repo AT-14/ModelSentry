@@ -15,6 +15,7 @@ not duplicated because one source tree is easier to audit and maintain.
 | Benign evaluation | 6 simulated clients | 90 sessions per mode across five profiles |
 | Detector comparison | Rate-only comparison | Four identical-traffic detector modes |
 | Performance evidence | Experiment metrics | Service and in-process API p50/p95 latency |
+| Live demonstration | Completed experiment artifacts | Real HTTP normal-to-attack flow with auto-refreshing alerts |
 | Reproducibility | Evidence manifest | Protocol signatures, source revision, and 88-file manifest |
 
 ## Result context

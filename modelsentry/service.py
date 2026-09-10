@@ -1,11 +1,12 @@
 import hashlib
+import threading
 from dataclasses import dataclass, replace
 
 import numpy as np
 import torch
 
 from .model import VictimCNN, predict_batch
-from .monitor import QueryRecord, RiskAssessment, StatefulMonitor
+from .monitor import Monitor, QueryRecord, RiskAssessment
 from .store import EventStore
 
 
@@ -21,7 +22,7 @@ class PredictionService:
     def __init__(
         self,
         model: VictimCNN,
-        monitor: StatefulMonitor,
+        monitor: Monitor,
         store: EventStore,
         defence_enabled: bool,
     ) -> None:
@@ -32,8 +33,23 @@ class PredictionService:
         self._client_counts: dict[str, int] = {}
         self._enforcement: dict[str, str] = {}
         self._restricted_counts: dict[str, int] = {}
+        self._lock = threading.RLock()
+
+    def reset(self, monitor: Monitor) -> None:
+        with self._lock:
+            self.monitor = monitor
+            self._client_counts.clear()
+            self._enforcement.clear()
+            self._restricted_counts.clear()
+            self.store.reset()
 
     def predict(
+        self, client_id: str, image: torch.Tensor, timestamp: float
+    ) -> PredictionResponse:
+        with self._lock:
+            return self._predict(client_id, image, timestamp)
+
+    def _predict(
         self, client_id: str, image: torch.Tensor, timestamp: float
     ) -> PredictionResponse:
         if not client_id.strip():

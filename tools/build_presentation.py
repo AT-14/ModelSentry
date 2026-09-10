@@ -174,14 +174,14 @@ def make_holdout_chart(summary: dict, destination: Path) -> None:
         detection,
         width,
         color=f"#{GOLD}",
-        label="Attack detection",
+        label="Attack detection rate",
     )
     benign_bars = axis.bar(
         positions + width / 2,
         benign,
         width,
         color=f"#{TEAL}",
-        label="Benign mitigation",
+        label="Benign false-positive rate",
     )
     axis.bar_label(
         detection_bars,
@@ -244,7 +244,7 @@ def make_dashboard_snapshot(summary: dict, destination: Path) -> None:
         ),
         (
             f"{enhanced['benign_sessions_mitigated']}/{enhanced['benign_sessions_tested']}",
-            "BENIGN SESSIONS MITIGATED",
+            "BENIGN FALSE POSITIVES",
         ),
         (f"{enhanced['final_fidelity']['mean']:.2%}", "MEAN FINAL FIDELITY"),
         (f"{latency['p50_ms']['mean']:.2f} ms", "API P50 LATENCY"),
@@ -311,11 +311,11 @@ def make_dashboard_snapshot(summary: dict, destination: Path) -> None:
 
 def add_slide_one(prs: Presentation, summary: dict, draft: bool) -> None:
     slide = prs.slides.add_slide(prs.slide_layouts[6])
-    add_base(slide, "National cybersecurity competition", "ModelSentry", 1, draft)
-    add_text(slide, "Detect model theft before the copy becomes useful.", 0.55, 1.38, 10.8, 0.5, 20, GOLD, False, "Aptos Display")
+    add_base(slide, "Title slide", "ModelSentry", 1, draft)
+    add_text(slide, "Detect model-theft behavior and limit API leakage.", 0.55, 1.38, 10.8, 0.5, 20, GOLD, False, "Aptos Display")
     add_text(
         slide,
-        "A stateful API-security layer that identifies systematic model learning, explains the evidence, and limits information exposure before a surrogate becomes valuable.",
+        "A stateful API-security layer that identifies systematic model learning, explains the evidence, and limits information exposure as extraction behavior emerges.",
         0.55,
         1.98,
         11.7,
@@ -326,7 +326,7 @@ def add_slide_one(prs: Presentation, summary: dict, draft: bool) -> None:
     enhanced = summary["mode_overview"]["enhanced"]
     api_latency = summary["latency"]["enhanced/api_in_process"]["p50_ms"]["mean"]
     add_metric(slide, 0.55, 3.05, 2.85, "11/12", "Attack runs detected")
-    add_metric(slide, 3.57, 3.05, 2.85, "0/90", "Benign sessions mitigated", TEAL)
+    add_metric(slide, 3.57, 3.05, 2.85, "0/90", "Benign false positives", TEAL)
     add_metric(
         slide,
         6.59,
@@ -371,14 +371,14 @@ def add_slide_two(prs: Presentation, draft: bool) -> None:
         2.30,
     )
     add_panel(slide, 0.55, 4.05, 3.62, 1.65)
-    add_text(slide, "OWNER", 0.77, 4.31, 2.8, 0.25, 8, TEAL, True)
-    add_text(slide, "Government AI platform and security operations teams", 0.77, 4.72, 3.0, 0.66, 11, INK, True)
+    add_text(slide, "BUYER / USER", 0.77, 4.31, 2.8, 0.25, 8, TEAL, True)
+    add_text(slide, "Government AI API owners and SOC analysts", 0.77, 4.72, 3.0, 0.66, 11, INK, True)
     add_panel(slide, 4.36, 4.05, 3.62, 1.65)
-    add_text(slide, "BUSINESS RISK", 4.58, 4.31, 2.8, 0.25, 8, TEAL, True)
-    add_text(slide, "IP loss, avoided API fees, and cheaper adversarial reconnaissance", 4.58, 4.72, 3.0, 0.66, 11, INK, True)
+    add_text(slide, "BUSINESS OUTCOME", 4.58, 4.31, 2.8, 0.25, 8, TEAL, True)
+    add_text(slide, "Protect model IP and API revenue while preserving legitimate access", 4.58, 4.72, 3.0, 0.66, 11, INK, True)
     add_panel(slide, 8.17, 4.05, 4.29, 1.65, PANEL_LIGHT)
     add_text(slide, "THE GAP", 8.39, 4.31, 2.8, 0.25, 8, GOLD, True)
-    add_text(slide, "Rate limits see speed. Model theft is a sequence of information-acquisition decisions.", 8.39, 4.72, 3.65, 0.70, 11, INK, True)
+    add_text(slide, "Augments rate limits and manual review by correlating the information value and structure of query sequences.", 8.39, 4.72, 3.65, 0.70, 11, INK, True)
     set_notes(
         slide,
         "[Timing: 0:35-1:05]\nWalk left to right through the extraction loop. The attacker queries, collects labels, trains a different model, and can eventually replace paid API access. Explain the buyer and business impact. Emphasize the design gap: rate limiting is useful but cannot characterize the information value and structure of a query sequence. Transition: ModelSentry converts that sequence into persistent evidence.",
@@ -387,14 +387,14 @@ def add_slide_two(prs: Presentation, draft: bool) -> None:
 
 def add_slide_three(prs: Presentation, draft: bool) -> None:
     slide = prs.slides.add_slide(prs.slide_layouts[6])
-    add_base(slide, "Proposed solution", "Stateful evidence, graduated response", 3, draft)
+    add_base(slide, "Proposed solution", "Working prototype: stateful evidence, graduated response", 3, draft)
     add_flow(
         slide,
         (
             ("FastAPI", "Validated image and API identity"),
             ("Victim CNN", "Label, confidence, margin, embedding"),
             ("50-query monitor", "Per-key rolling behavioral evidence"),
-            ("Policy", "Allow, observe, throttle, block"),
+            ("Policy + dashboard", "Allow, observe, throttle, block; persist evidence"),
         ),
         1.48,
     )
@@ -437,7 +437,7 @@ def add_slide_four(
     draft: bool,
 ) -> None:
     slide = prs.slides.add_slide(prs.slide_layouts[6])
-    add_base(slide, "Validation and results", "11/12 attacks detected; 0/90 benign sessions mitigated", 4, draft)
+    add_base(slide, "Solution validation", "11/12 attacks detected; 0/90 benign sessions incorrectly mitigated", 4, draft)
     add_panel(slide, 0.55, 1.40, 7.45, 4.90)
     slide.shapes.add_picture(str(chart_path), Inches(0.79), Inches(1.72), width=Inches(6.97), height=Inches(3.92))
     add_text(slide, "Four modes evaluated on identical attacks and benign traffic", 0.86, 5.83, 6.8, 0.23, 8, MUTED, align=PP_ALIGN.CENTER)
@@ -460,11 +460,12 @@ def add_slide_four(
         3.90,
         4.18,
         f"{enhanced['final_fidelity']['mean']:.2%}",
-        "Mean final surrogate fidelity",
+        "Mean final fidelity; lower is better",
         TEAL,
     )
-    add_metric(slide, 8.28, 5.15, 4.18, f"{api_latency:.2f} ms", "In-process API p50")
-    add_text(slide, "3 holdout seeds  |  4 attacks  |  90 benign sessions/mode  |  40,000 training images  |  8 epochs", 0.75, 6.53, 11.8, 0.25, 8, MUTED, align=PP_ALIGN.CENTER)
+    api_p95 = summary["latency"]["enhanced/api_in_process"]["p95_ms"]["mean"]
+    add_metric(slide, 8.28, 5.15, 4.18, f"{api_latency:.2f} / {api_p95:.2f} ms", "API p50 / p95")
+    add_text(slide, "Frozen 3-seed holdout  |  disjoint train/calibration/query/benign/fidelity splits  |  different SGD surrogate  |  12 attack runs", 0.75, 6.53, 11.8, 0.25, 8, MUTED, align=PP_ALIGN.CENTER)
     set_notes(
         slide,
         "[Timing: 1:50-2:40]\nState the methodology before the result: three untouched holdout seeds, 40,000 victim-training images, eight epochs, four attack types, four detector modes, and 90 benign sessions per mode. Enhanced V2.4 detected 11 of 12 attack runs and mitigated none of the 90 benign sessions. Mean final surrogate fidelity was 71.78 percent. The development result did not reproduce perfectly: one slow-adaptive run was missed. Transition: the prototype is useful, but its limits are explicit.",
@@ -473,13 +474,13 @@ def add_slide_four(
 
 def add_slide_five(prs: Presentation, dashboard_path: Path, qr_path: Path, video_url: str, draft: bool) -> None:
     slide = prs.slides.add_slide(prs.slide_layouts[6])
-    add_base(slide, "Conclusion and deployment", "Operationally useful, honestly bounded", 5, draft)
+    add_base(slide, "Results and conclusions", "Operationally useful, honestly bounded", 5, draft)
     add_panel(slide, 0.55, 1.42, 6.15, 3.46)
     slide.shapes.add_picture(str(dashboard_path), Inches(0.74), Inches(1.63), width=Inches(5.77), height=Inches(3.24))
     add_panel(slide, 6.95, 1.42, 5.51, 3.46)
     takeaways = (
-        ("01", "Explainable early warning", "Analysts see which behaviors crossed benign-calibrated percentiles."),
-        ("02", "Graduated containment", "Monitor, throttle, and block reduce leakage without a binary shutdown."),
+        ("01", "Validated improvement", "Same traffic: detection rose 4/12 to 11/12; benign mitigation fell 4/90 to 0/90."),
+        ("02", "Lower attacker fidelity", "Mean final fidelity fell from 80.92% to 71.78% against baseline full."),
         ("03", "Known residual risk", "One patient slow-adaptive holdout run was not detected."),
     )
     for index, (number, heading, detail) in enumerate(takeaways):
@@ -562,7 +563,7 @@ def main() -> None:
     presentation = Presentation()
     presentation.slide_width = Inches(SLIDE_W)
     presentation.slide_height = Inches(SLIDE_H)
-    presentation.core_properties.title = "ModelSentry: Detect Model Theft Before the Copy Becomes Useful"
+    presentation.core_properties.title = "ModelSentry: Detect Model-Theft Behavior and Limit API Leakage"
     presentation.core_properties.subject = "School of Cyber Defence 2026"
     presentation.core_properties.author = f"{TEAM}: {', '.join(MEMBERS)}"
     presentation.core_properties.keywords = "model extraction, API security, cybersecurity"
