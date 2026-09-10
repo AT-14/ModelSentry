@@ -37,3 +37,24 @@ python run_validation.py --seeds 42 7 123 --epochs 8 --output /content/validatio
 
 Do not manually edit the generated CSV, JSON, or chart. If the detector or
 experiment changes, rerun all seeds and use the new manifest.
+
+## Extended V2 holdout
+
+V2 uses `colab_v2_validation.ipynb`, which clones the public repository directly
+instead of uploading a local archive.
+
+The notebook runs the frozen enhanced v2.4 policy and all three comparison modes
+on untouched seeds 314, 2718, and 1618. It evaluates four attack scenarios and
+30 benign sessions per mode and seed. Do not replace these seeds with development
+seeds 42, 7, and 123.
+
+The V2 command is:
+
+```bash
+python run_validation_v2.py --seeds 314 2718 1618 --epochs 8 \
+  --modes rate_only model_aware full enhanced \
+  --output /content/validation_extended_v2_holdout
+```
+
+Treat `docs/V2_DEVELOPMENT_RESULTS.md` only as development evidence. Update final
+claims only after downloading and verifying the V2 holdout manifest.

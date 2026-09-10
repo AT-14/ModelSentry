@@ -6,7 +6,9 @@ data/
 artifacts/
 *.db
 *.zip
+*.tar.gz
 *.pt
 submission/*.pdf
+submission/*.pptx
 submission/*.png
 submission/*.json

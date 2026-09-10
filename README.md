@@ -103,6 +103,19 @@ Run independent local validation seeds:
 python run_validation.py --quick --seeds 42 7 123
 ```
 
+Run the isolated Extended V2 protocol with expanded traffic, attack scenarios,
+detector ablations, alert-time fidelity, and latency measurements:
+
+```powershell
+python run_validation_v2.py --quick --seeds 42 --epochs 1 --max-queries 500
+```
+
+V2 writes only to `artifacts/validation_extended_v2` by default and refuses to
+write inside the frozen `artifacts/validation_corrected` Baseline V1 evidence.
+Use `colab_v2_validation.ipynb` for the frozen eight-epoch holdout protocol on
+seeds 314, 2718, and 1618. Development results are documented separately in
+`docs/V2_DEVELOPMENT_RESULTS.md` and must not be presented as holdout evidence.
+
 Run the full validation protocol, preferably on Colab:
 
 ```bash

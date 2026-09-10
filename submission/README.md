@@ -5,7 +5,8 @@ This directory is generated from the frozen corrected validation evidence in
 
 ## Current status
 
-- `ModelSentry_Submission_DRAFT.pdf`: five-page competition submission draft.
+- `ModelSentry_Presentation_DRAFT.pptx`: editable five-slide presentation draft.
+- `ModelSentry_Submission_DRAFT.pdf`: matching five-page competition submission draft.
 - `dashboard_snapshot.png`: static snapshot generated from the corrected evidence.
 - `baseline_v1_manifest.json`: source and evidence SHA-256 hashes.
 - `ModelSentry_V1_Source.zip`: reproducible source package.
@@ -19,7 +20,7 @@ provided:
 - Repository URL
 - Backup demonstration video URL
 
-Regenerate the final PDF with:
+Regenerate the current internal PDF-only draft with:
 
 ```powershell
 python tools/build_submission.py `
@@ -32,6 +33,16 @@ python tools/build_submission.py `
 
 The generated file remains named `ModelSentry_Submission_DRAFT.pdf` until the
 identity and links are reviewed. Rename it only after the final verification.
+
+Generate the editable presentation and matching PDF after uploading the video:
+
+```powershell
+pip install -r requirements-presentation.txt
+python tools/build_presentation.py --video-url "https://..."
+```
+
+With a real video URL, this creates `ModelSentry_Presentation.pptx` and
+`ModelSentry_Submission.pdf` without the draft watermark.
 
 ## Baseline isolation rule
 

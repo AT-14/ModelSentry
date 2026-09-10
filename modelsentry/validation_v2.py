@@ -1,5 +1,6 @@
 import time
 from dataclasses import asdict, dataclass
+from math import ceil
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Literal
@@ -25,7 +26,13 @@ from .service import PredictionResponse, PredictionService
 from .store import EventStore
 
 
-DetectorMode = Literal["rate_only", "model_aware", "full"]
+DetectorMode = Literal["rate_only", "model_aware", "full", "enhanced"]
+ALL_MODES: tuple[DetectorMode, ...] = (
+    "rate_only",
+    "model_aware",
+    "full",
+    "enhanced",
+)
 
 
 @dataclass(frozen=True)
@@ -33,7 +40,18 @@ class BenignTrafficProfile:
     name: str
     intervals: tuple[float, ...]
     session_size: int = 100
-    session_count: int = 2
+    session_count: int = 6
+    long_session_size: int = 500
+    long_session_count: int = 1
+
+
+@dataclass(frozen=True)
+class AttackScenario:
+    name: str
+    query_interval: float
+    maximum_queries: int | None = None
+    rotating_clients: int = 1
+    replay_pool_size: int | None = None
 
 
 BENIGN_PROFILES = (
@@ -43,6 +61,32 @@ BENIGN_PROFILES = (
     BenignTrafficProfile("jittered", (0.45, 0.7, 1.1, 0.6, 0.95)),
     BenignTrafficProfile("mixed_rate", (0.05,) * 5 + (0.8,) * 5),
 )
+
+ATTACK_SCENARIOS = (
+    AttackScenario("fast_adaptive", 0.01),
+    AttackScenario("slow_adaptive", 0.8, maximum_queries=2_000),
+    AttackScenario("replay", 0.05, maximum_queries=2_000, replay_pool_size=250),
+    AttackScenario("distributed", 0.01, maximum_queries=2_000, rotating_clients=5),
+)
+
+ENHANCED_POLICY = {
+    "version": "2.4",
+    "base_detector": "model_aware_telemetry",
+    "linked_identity_separator": ":",
+    "persistence_windows": 100,
+    "repetition_minimum_queries": 100,
+    "repetition_ratio": 0.20,
+    "boundary_minimum_windows": 150,
+    "boundary_percentile": 0.95,
+    "boundary_ratio": 0.60,
+    "extreme_rate_multiplier": 2.0,
+    "extreme_rate_minimum_queries": 100,
+    "linked_account_minimum": 3,
+    "linked_account_minimum_queries": 150,
+    "campaign_minimum_queries": 400,
+    "campaign_boundary_ratio": 0.40,
+    "confirmation_windows": 3,
+}
 
 
 def _records(
@@ -142,6 +186,197 @@ class AblationMonitor:
         return RiskAssessment(risk, action, signals, percentiles, reasons[:3])
 
 
+class EnhancedMonitor:
+    def __init__(
+        self,
+        profile: BenignProfile,
+        window_size: int = 50,
+        warmup: int = 50,
+        persistence_windows: int = ENHANCED_POLICY["persistence_windows"],
+        repetition_threshold: float = ENHANCED_POLICY["repetition_ratio"],
+    ) -> None:
+        self.base = AblationMonitor(
+            profile, "model_aware", window_size=window_size, warmup=warmup
+        )
+        self.persistence_windows = persistence_windows
+        self.repetition_threshold = repetition_threshold
+        self.monitor_streaks: dict[str, int] = {}
+        self.repetition_streaks: dict[str, int] = {}
+        self.seen_fingerprints: dict[str, set[bytes]] = {}
+        self.duplicate_counts: dict[str, int] = {}
+        self.total_counts: dict[str, int] = {}
+        self.evaluated_counts: dict[str, int] = {}
+        self.critical_boundary_counts: dict[str, int] = {}
+        self.boundary_streaks: dict[str, int] = {}
+        self.extreme_rate_streaks: dict[str, int] = {}
+        self.linked_account_streaks: dict[str, int] = {}
+        self.campaign_streaks: dict[str, int] = {}
+        self.linked_accounts: dict[str, set[str]] = {}
+        self.extreme_rate_threshold = (
+            float(profile.distributions["rate"][-1])
+            * ENHANCED_POLICY["extreme_rate_multiplier"]
+        )
+
+    @staticmethod
+    def entity_id(client_id: str) -> str:
+        # Production resolvers would use authenticated organization and device
+        # metadata. The V2 simulator encodes linked accounts as group:account.
+        return client_id.split(ENHANCED_POLICY["linked_identity_separator"], 1)[0]
+
+    def observe(self, client_id: str, record: QueryRecord) -> RiskAssessment:
+        entity = self.entity_id(client_id)
+        assessment = self.base.observe(entity, record)
+        accounts = self.linked_accounts.setdefault(entity, set())
+        accounts.add(client_id)
+
+        fingerprint = record.request_fingerprint
+        if fingerprint is None:
+            fingerprint = np.round(record.embedding, decimals=5).tobytes()
+        seen = self.seen_fingerprints.setdefault(entity, set())
+        duplicate = fingerprint in seen
+        seen.add(fingerprint)
+        self.total_counts[entity] = self.total_counts.get(entity, 0) + 1
+        self.duplicate_counts[entity] = self.duplicate_counts.get(entity, 0) + int(
+            duplicate
+        )
+        repetition = self.duplicate_counts[entity] / self.total_counts[entity]
+
+        high_non_rate = sum(
+            assessment.percentiles.get(name, 0.0) >= 0.95
+            for name in SIGNAL_NAMES
+            if name != "rate"
+        )
+        if assessment.action != "allow" and high_non_rate >= 2:
+            self.monitor_streaks[entity] = self.monitor_streaks.get(entity, 0) + 1
+        else:
+            self.monitor_streaks[entity] = 0
+
+        if assessment.percentiles:
+            self.evaluated_counts[entity] = self.evaluated_counts.get(entity, 0) + 1
+            self.critical_boundary_counts[entity] = self.critical_boundary_counts.get(
+                entity, 0
+            ) + int(
+                assessment.percentiles.get("boundary", 0.0)
+                >= ENHANCED_POLICY["boundary_percentile"]
+            )
+        evaluated = self.evaluated_counts.get(entity, 0)
+        boundary_concentration = (
+            self.critical_boundary_counts.get(entity, 0) / evaluated
+            if evaluated
+            else 0.0
+        )
+        boundary_candidate = (
+            evaluated >= ENHANCED_POLICY["boundary_minimum_windows"]
+            and boundary_concentration >= ENHANCED_POLICY["boundary_ratio"]
+        )
+        self.boundary_streaks[entity] = (
+            self.boundary_streaks.get(entity, 0) + 1
+            if boundary_candidate
+            else 0
+        )
+
+        repetition_candidate = (
+            self.total_counts[entity] >= ENHANCED_POLICY["repetition_minimum_queries"]
+            and repetition >= self.repetition_threshold
+        )
+        self.repetition_streaks[entity] = (
+            self.repetition_streaks.get(entity, 0) + 1
+            if repetition_candidate
+            else 0
+        )
+
+        extreme_rate_candidate = (
+            self.total_counts[entity]
+            >= ENHANCED_POLICY["extreme_rate_minimum_queries"]
+            and assessment.signals.get("rate", 0.0) >= self.extreme_rate_threshold
+        )
+        self.extreme_rate_streaks[entity] = (
+            self.extreme_rate_streaks.get(entity, 0) + 1
+            if extreme_rate_candidate
+            else 0
+        )
+        linked_account_candidate = (
+            len(accounts) >= ENHANCED_POLICY["linked_account_minimum"]
+            and self.total_counts[entity]
+            >= ENHANCED_POLICY["linked_account_minimum_queries"]
+        )
+        self.linked_account_streaks[entity] = (
+            self.linked_account_streaks.get(entity, 0) + 1
+            if linked_account_candidate
+            else 0
+        )
+        campaign_candidate = (
+            self.total_counts[entity] >= ENHANCED_POLICY["campaign_minimum_queries"]
+            and boundary_concentration
+            >= ENHANCED_POLICY["campaign_boundary_ratio"]
+        )
+        self.campaign_streaks[entity] = (
+            self.campaign_streaks.get(entity, 0) + 1
+            if campaign_candidate
+            else 0
+        )
+
+        # Short-window model-aware decisions remain telemetry. Enhanced mode
+        # enforces only after an independent long-horizon confirmation below.
+        action = "monitor" if assessment.action != "allow" else "allow"
+        reasons = list(assessment.reasons)
+        if (
+            self.monitor_streaks[entity] >= self.persistence_windows
+            and action in {"allow", "monitor"}
+        ):
+            action = "throttle"
+            reasons.insert(0, "persistent model-aware evidence across 100 windows")
+        if (
+            self.repetition_streaks[entity] >= ENHANCED_POLICY["confirmation_windows"]
+            and action in {"allow", "monitor"}
+        ):
+            action = "throttle"
+            reasons.insert(0, "repeated-query ratio above 20% over long-term history")
+        if (
+            self.boundary_streaks[entity] >= ENHANCED_POLICY["confirmation_windows"]
+            and action in {"allow", "monitor"}
+        ):
+            action = "throttle"
+            reasons.insert(
+                0,
+                "boundary probing above the 95th benign percentile in 60% of long-term windows",
+            )
+        if (
+            self.extreme_rate_streaks[entity]
+            >= ENHANCED_POLICY["confirmation_windows"]
+            and action in {"allow", "monitor"}
+        ):
+            action = "throttle"
+            reasons.insert(0, "query rate above twice the calibrated benign maximum")
+        if (
+            self.linked_account_streaks[entity]
+            >= ENHANCED_POLICY["confirmation_windows"]
+            and action in {"allow", "monitor"}
+        ):
+            action = "throttle"
+            reasons.insert(0, "coordinated campaign spans at least three linked accounts")
+        if (
+            self.campaign_streaks[entity] >= ENHANCED_POLICY["confirmation_windows"]
+            and action in {"allow", "monitor"}
+        ):
+            action = "throttle"
+            reasons.insert(0, "long campaign exceeds the boundary-heavy acquisition budget")
+
+        signals = {
+            **assessment.signals,
+            "repetition": repetition,
+            "boundary_concentration": boundary_concentration,
+            "linked_accounts": float(len(accounts)),
+        }
+        return RiskAssessment(
+            max(assessment.risk, repetition),
+            action,
+            signals,
+            assessment.percentiles,
+            tuple(reasons[:3]),
+        )
+
+
 def new_service(
     model: VictimCNN,
     profile: BenignProfile,
@@ -150,7 +385,12 @@ def new_service(
 ) -> tuple[PredictionService, EventStore]:
     store = EventStore(database_path)
     store.reset()
-    service = PredictionService(model, AblationMonitor(profile, mode), store, True)
+    monitor = (
+        EnhancedMonitor(profile)
+        if mode == "enhanced"
+        else AblationMonitor(profile, mode)
+    )
+    service = PredictionService(model, monitor, store, True)
     return service, store
 
 
@@ -162,12 +402,14 @@ def run_benign_sessions(
 ) -> list[dict]:
     results: list[dict] = []
     offset = 0
+    full_protocol = len(images) >= 5_000
     for profile in profiles:
-        for session_index in range(profile.session_count):
-            session_images = images[offset : offset + profile.session_size]
-            if len(session_images) < profile.session_size:
+        session_sizes = benign_session_sizes(profile, full_protocol)
+        for session_index, session_size in enumerate(session_sizes):
+            session_images = images[offset : offset + session_size]
+            if len(session_images) < session_size:
                 raise ValueError("Insufficient benign evaluation images")
-            offset += profile.session_size
+            offset += session_size
             allowed = 0
             max_risk = 0.0
             first_alert = None
@@ -195,6 +437,31 @@ def run_benign_sessions(
                 }
             )
     return results
+
+
+def benign_session_sizes(
+    profile: BenignTrafficProfile, full_protocol: bool
+) -> list[int]:
+    if not full_protocol:
+        return [profile.session_size] * 4
+    return [profile.long_session_size] * profile.long_session_count + [
+        profile.session_size
+    ] * (profile.session_count - profile.long_session_count)
+
+
+class RotatingClientService:
+    def __init__(self, service: PredictionService, clients: int, prefix: str) -> None:
+        if clients < 1:
+            raise ValueError("clients must be positive")
+        self.service = service
+        self.clients = clients
+        self.prefix = prefix
+        self.calls = 0
+
+    def predict(self, client_id: str, image: torch.Tensor, timestamp: float) -> PredictionResponse:
+        routed_client = f"{self.prefix}:account-{self.calls % self.clients}"
+        self.calls += 1
+        return self.service.predict(routed_client, image, timestamp)
 
 
 class AlertFidelityProbe:
@@ -247,10 +514,13 @@ def measure_latency(
     profile: BenignProfile,
     image: torch.Tensor,
     output_dir: Path,
+    mode: DetectorMode = "full",
     samples: int = 50,
     warmup: int = 5,
 ) -> dict:
-    service, store = new_service(model, profile, "full", output_dir / "latency_service.db")
+    service, store = new_service(
+        model, profile, mode, output_dir / f"latency_service_{mode}.db"
+    )
     service_times: list[float] = []
     for index in range(warmup + samples):
         started = time.perf_counter_ns()
@@ -260,7 +530,9 @@ def measure_latency(
             service_times.append(elapsed)
     store.close()
 
-    api_service, api_store = new_service(model, profile, "full", output_dir / "latency_api.db")
+    api_service, api_store = new_service(
+        model, profile, mode, output_dir / f"latency_api_{mode}.db"
+    )
     client = TestClient(create_app(api_service))
     payload = {"pixels": image.numpy().reshape(-1).tolist()}
     api_times: list[float] = []
@@ -281,6 +553,82 @@ def measure_latency(
     }
 
 
+def scenario_budgets(
+    budgets: tuple[int, ...], scenario: AttackScenario
+) -> tuple[int, ...]:
+    maximum = max(budgets)
+    if scenario.maximum_queries is not None:
+        maximum = min(maximum, scenario.maximum_queries)
+    selected = tuple(budget for budget in budgets if budget <= maximum)
+    if maximum not in selected:
+        selected += (maximum,)
+    return selected
+
+
+def scenario_pool(
+    attack_images: torch.Tensor,
+    scenario: AttackScenario,
+    maximum_queries: int,
+) -> torch.Tensor:
+    if scenario.replay_pool_size is None:
+        return attack_images
+    source = attack_images[: scenario.replay_pool_size]
+    if len(source) == 0:
+        raise ValueError("Replay scenario requires attack images")
+    repeats = ceil(maximum_queries / len(source))
+    return source.repeat((repeats, 1, 1, 1))[:maximum_queries]
+
+
+def run_attack_scenario(
+    model: VictimCNN,
+    profile: BenignProfile,
+    mode: DetectorMode,
+    scenario: AttackScenario,
+    attack_images: torch.Tensor,
+    fidelity_images: torch.Tensor,
+    victim_fidelity_labels: np.ndarray,
+    budgets: tuple[int, ...],
+    seed: int,
+    output_dir: Path,
+) -> dict:
+    effective_budgets = scenario_budgets(budgets, scenario)
+    pool = scenario_pool(attack_images, scenario, max(effective_budgets))
+    service, store = new_service(
+        model,
+        profile,
+        mode,
+        output_dir / f"attack_{mode}_{scenario.name}.db",
+    )
+    routed_service = (
+        RotatingClientService(service, scenario.rotating_clients, f"v2-{scenario.name}")
+        if scenario.rotating_clients > 1
+        else service
+    )
+    probe = AlertFidelityProbe(
+        routed_service, fidelity_images, victim_fidelity_labels, seed
+    )
+    extraction = run_adaptive_extraction(
+        probe,
+        pool,
+        fidelity_images,
+        victim_fidelity_labels,
+        effective_budgets,
+        seed,
+        f"v2-extractor-{mode}-{scenario.name}",
+        query_interval=scenario.query_interval,
+    )
+    store.close()
+    return {
+        **asdict(extraction),
+        "answered_queries_at_first_alert": probe.answered_at_alert,
+        "fidelity_at_first_alert": probe.fidelity_at_alert,
+        "query_interval": scenario.query_interval,
+        "rotating_clients": scenario.rotating_clients,
+        "replay_pool_size": scenario.replay_pool_size,
+        "maximum_queries": max(effective_budgets),
+    }
+
+
 def run_extended_experiment(
     model: VictimCNN,
     calibration_images: torch.Tensor,
@@ -291,46 +639,50 @@ def run_extended_experiment(
     budgets: tuple[int, ...],
     seed: int,
     output_dir: Path,
+    modes: tuple[DetectorMode, ...] = ALL_MODES,
 ) -> dict:
     output_dir.mkdir(parents=True, exist_ok=True)
     profile = build_extended_benign_profile(model, calibration_images)
     mode_results: dict[str, dict] = {}
-    for mode in ("rate_only", "model_aware", "full"):
+    for mode in modes:
         benign_service, benign_store = new_service(
             model, profile, mode, output_dir / f"benign_{mode}.db"
         )
         benign = run_benign_sessions(benign_service, benign_images, mode)
         benign_store.close()
 
-        attack_service, attack_store = new_service(
-            model, profile, mode, output_dir / f"attack_{mode}.db"
-        )
-        probe = AlertFidelityProbe(attack_service, fidelity_images, victim_fidelity_labels, seed)
-        extraction = run_adaptive_extraction(
-            probe,
-            attack_images,
-            fidelity_images,
-            victim_fidelity_labels,
-            budgets,
-            seed,
-            f"v2-extractor-{mode}",
-        )
-        attack_store.close()
         mode_results[mode] = {
             "benign_sessions": benign,
-            "fast_attack": {
-                **asdict(extraction),
-                "answered_queries_at_first_alert": probe.answered_at_alert,
-                "fidelity_at_first_alert": probe.fidelity_at_alert,
+            "attacks": {
+                scenario.name: run_attack_scenario(
+                    model,
+                    profile,
+                    mode,
+                    scenario,
+                    attack_images,
+                    fidelity_images,
+                    victim_fidelity_labels,
+                    budgets,
+                    seed,
+                    output_dir,
+                )
+                for scenario in ATTACK_SCENARIOS
             },
         }
-    mode_results["full"]["latency"] = measure_latency(
-        model, profile, benign_images[0], output_dir
-    )
+    for mode in (mode for mode in ("full", "enhanced") if mode in mode_results):
+        mode_results[mode]["latency"] = measure_latency(
+            model, profile, benign_images[0], output_dir, mode=mode
+        )
     return {
         "schema_version": 2,
         "seed": seed,
         "profiles": [asdict(profile) for profile in BENIGN_PROFILES],
+        "effective_benign_sessions_per_mode": len(
+            next(iter(mode_results.values()))["benign_sessions"]
+        ),
+        "detector_modes_evaluated": list(modes),
+        "attack_scenarios": [asdict(scenario) for scenario in ATTACK_SCENARIOS],
+        "enhanced_policy": ENHANCED_POLICY,
         "alert_definition": "first throttle or block action",
         "detector_modes": mode_results,
     }

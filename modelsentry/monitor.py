@@ -13,6 +13,7 @@ class QueryRecord:
     timestamp: float
     embedding: np.ndarray
     probabilities: np.ndarray
+    request_fingerprint: bytes | None = None
 
 
 @dataclass(frozen=True)

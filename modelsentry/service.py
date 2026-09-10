@@ -1,3 +1,4 @@
+import hashlib
 from dataclasses import dataclass, replace
 
 import numpy as np
@@ -49,7 +50,14 @@ class PredictionService:
         probability_vector = probabilities[0]
         assessment = self.monitor.observe(
             client_id,
-            QueryRecord(timestamp, embeddings[0], probability_vector),
+            QueryRecord(
+                timestamp,
+                embeddings[0],
+                probability_vector,
+                hashlib.blake2b(
+                    image.detach().cpu().numpy().tobytes(), digest_size=16
+                ).digest(),
+            ),
         )
 
         count = self._client_counts.get(client_id, 0) + 1
