@@ -1,3 +1,8 @@
+"""Build the historical Baseline V1 PDF.
+
+Use tools/build_presentation.py for the accepted V2.4 presentation and PDF.
+"""
+
 import argparse
 import json
 import textwrap
@@ -342,7 +347,7 @@ def build_pdf(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Build the five-page ModelSentry PDF")
+    parser = argparse.ArgumentParser(description="Build the historical Baseline V1 PDF")
     parser.add_argument("--team", default="TEAM DETAILS TO BE ADDED")
     parser.add_argument("--members", nargs="*", default=[])
     parser.add_argument("--university", default="UNIVERSITY TO BE ADDED")

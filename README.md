@@ -39,8 +39,8 @@ Run a three-seed local validation with reduced settings:
 python run_validation.py --quick --seeds 42 7 123
 ```
 
-For the final GPU protocol, follow `COLAB.md` and use
-`colab_full_validation.ipynb`. Its `requirements-colab.txt` preserves the
+For the accepted Extended V2.4 GPU protocol, follow `COLAB.md` and use
+`colab_v2_validation.ipynb`. Its `requirements-colab.txt` preserves the
 runtime's preinstalled CUDA-enabled PyTorch build.
 
 ## Design goals
@@ -83,8 +83,9 @@ and train a different local model. They cannot read the victim's weights,
 training set, process memory, or event database.
 
 ModelSentry aims to identify sustained extraction behavior before the substitute
-model reaches high fidelity. It does not claim perfect detection of patient,
-in-distribution, or distributed multi-account attackers.
+model reaches high fidelity. It does not claim perfect detection of patient or
+in-distribution attackers. V2.4 correlates simulated linked accounts, but a
+production identity resolver remains future work.
 
 All attacks in this repository target the locally owned demonstration model.
 Do not run extraction traffic against third-party services without authorization.
@@ -113,8 +114,14 @@ python run_validation_v2.py --quick --seeds 42 --epochs 1 --max-queries 500
 V2 writes only to `artifacts/validation_extended_v2` by default and refuses to
 write inside the frozen `artifacts/validation_corrected` Baseline V1 evidence.
 Use `colab_v2_validation.ipynb` for the frozen eight-epoch holdout protocol on
-seeds 314, 2718, and 1618. Development results are documented separately in
-`docs/V2_DEVELOPMENT_RESULTS.md` and must not be presented as holdout evidence.
+seeds 314, 2718, and 1618.
+
+The verified V2.4 holdout detected 11/12 attacks, mitigated 0/90 benign sessions,
+and reached 71.78% mean final surrogate fidelity. One slow-adaptive run was not
+detected. The original 12/12 replacement gate was not met, so this result is
+reported as accepted extended evidence rather than a perfect-detection claim.
+See `docs/V2_HOLDOUT_RESULTS.md` for the final record and
+`docs/V2_DEVELOPMENT_RESULTS.md` for development-only results.
 
 Run the full validation protocol, preferably on Colab:
 
@@ -137,6 +144,8 @@ python -m pytest -q
 - `fidelity_vs_queries.png`: one-run defended/undefended extraction comparison.
 - `multi_seed_fidelity.png`: aggregate curve with variability bands.
 - `manifest.json`: SHA-256 hashes of reported evidence.
+- `manifest_v2.json`: source revision, protocol signatures, and SHA-256 hashes
+  for Extended V2 evidence.
 - `*.db`: query transcripts, scores, actions, and alert reasons.
 
 ## Metric definitions
@@ -157,7 +166,8 @@ evaluation, and fidelity evaluation are disjoint.
 ## Current limitations
 
 - Fashion-MNIST and generated traffic are a proof of concept, not production logs.
-- The prototype monitors API keys independently and does not correlate Sybil accounts.
+- V2 linked-account tests use simulated organization-prefixed identities; a
+  production identity resolver is not implemented.
 - Slow in-distribution attacks can be substantially harder to distinguish.
 - The Information Acquisition Budget is an operational proxy, not theoretical
   mutual information.
@@ -165,5 +175,6 @@ evaluation, and fidelity evaluation are disjoint.
   privacy retention controls, and analyst review.
 
 See `docs/ARCHITECTURE.md`, `docs/DEMO_SCRIPT.md`, and
-`docs/PRESENTATION_SKELETON.md` for jury-facing material. Corrected full-run
-evidence and the approved claim are documented in `docs/VALIDATED_RESULTS.md`.
+`docs/PRESENTATION_SKELETON.md` for jury-facing material. The accepted V2.4
+holdout claim is documented in `docs/V2_HOLDOUT_RESULTS.md`; historical
+Baseline V1 evidence remains in `docs/VALIDATED_RESULTS.md`.

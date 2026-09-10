@@ -1,6 +1,8 @@
 # Five-page submission skeleton
 
-Use the corrected, frozen values in `docs/VALIDATED_RESULTS.md`.
+Use the accepted holdout values in `docs/V2_HOLDOUT_RESULTS.md`. Baseline V1
+values may be identified as historical evidence but must not replace the V2.4
+headline result.
 
 ## Page 1 - Title and objective
 
@@ -17,8 +19,9 @@ Primary visual: simple attacker-to-API-to-surrogate diagram.
 ## Page 2 - Proposed solution
 
 - Protected Fashion-MNIST CNN behind FastAPI.
-- Stateful per-key windows and five behavioral signal families.
-- Benign-calibrated percentiles and persistent multi-signal escalation.
+- Stateful per-key windows and multi-timescale behavioral evidence.
+- Benign-calibrated percentiles, exact replay fingerprints, and linked-account
+  correlation.
 - Information Acquisition Budget as an operational leakage proxy.
 - Graduated response: allow, observe, throttle, block.
 
@@ -27,9 +30,10 @@ Primary visual: architecture diagram from `docs/ARCHITECTURE.md`.
 ## Page 3 - Validation methodology
 
 - Disjoint victim, calibration, attacker, benign, and hidden fidelity partitions.
-- Normal, legitimate batch, and adaptive boundary-seeking clients.
+- Five benign profiles and four attacks: fast adaptive, slow adaptive, replay,
+  and distributed linked accounts.
 - Different surrogate architecture trained from actual API responses.
-- Seeds: 42, 7, and 123; 40,000 training images; 8 epochs.
+- Holdout seeds: 314, 2718, and 1618; 40,000 training images; 8 epochs.
 - Metrics: accuracy, fidelity, detection rate, false positives, alert delay,
   responses prevented, and API overhead.
 
@@ -37,21 +41,22 @@ Primary visual: experimental protocol and data-partition diagram.
 
 ## Page 4 - Results
 
-- Victim validation accuracy: `90.56% +/- 0.59 pp`.
-- Required attack detection rate: `3/3 (100%)`.
-- Benign clients blocked: `0/6`.
-- Undefended fidelity: `83.45% +/- 1.11 pp`.
-- Defended fidelity: `71.98% +/- 1.61 pp`.
-- Mean queries to alert: `337 +/- 184`.
-- Responses prevented: `4,655 +/- 184 of 5,000`.
+- Victim validation accuracy: `90.39% +/- 0.35 pp`.
+- Attack detection: `11/12 (91.67%)`.
+- Benign sessions mitigated: `0/90`.
+- Mean final surrogate fidelity: `71.78% +/- 7.94 pp`.
+- Service latency p50/p95: `7.30/8.45 ms`.
+- In-process API latency p50/p95: `12.93/14.84 ms`.
+- Explicit limitation: one slow-adaptive run was not detected.
 
-Primary visual: final `multi_seed_fidelity.png`. Include one compact metric table.
+Primary visual: detector-mode comparison. Include one compact metric table.
 
 ## Page 5 - Conclusion and deployment
 
 - Demonstrated outcome and strongest attack evidence.
-- Why multi-signal stateful monitoring outperforms rate-only detection.
-- Limits: synthetic data, drift, patient in-domain attackers, and Sybil accounts.
+- Why enhanced multi-timescale monitoring outperformed the tested baselines.
+- Limits: synthetic data, drift, one missed slow-adaptive run, and simulated
+  rather than production-linked identities.
 - Production roadmap: tenant baselines, cross-key linkage, streaming storage,
   drift review, telemetry retention, and analyst feedback.
 - Repository and demonstration-video links or QR codes.

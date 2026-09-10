@@ -1,9 +1,9 @@
-# Corrected full-validation results
+# Baseline V1 Validation Results
 
-These are the final currently approved prototype results. They supersede the
-initial Colab summary because monitoring and calibration now both begin with a
-complete 50-query window. The same verified Colab-trained checkpoints were
-reused; only inference, attack execution, and aggregation were rerun.
+These are the frozen Baseline V1 results. They remain the gate-qualified
+baseline because Extended V2.4 detected 11/12 rather than the 12/12 required by
+its original replacement gate. The accepted V2.4 holdout result is documented
+in `docs/V2_HOLDOUT_RESULTS.md`.
 
 ## Protocol
 
@@ -47,7 +47,7 @@ rate-only baseline. Forcing detection in this case caused a benign false positiv
 in dry-run testing, so the safer policy was retained. Patient low-rate and
 distributed attackers are therefore explicit residual risks.
 
-## Approved claim
+## Historical Baseline V1 claim
 
 > In a controlled three-seed Fashion-MNIST evaluation, ModelSentry detected all
 > three high-volume adaptive extraction campaigns without blocking any of six

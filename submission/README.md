@@ -1,38 +1,21 @@
-# ModelSentry Baseline V1 Submission Package
+# ModelSentry V2.4 Submission Package
 
-This directory is generated from the frozen corrected validation evidence in
-`artifacts/validation_corrected`.
+This directory is generated from the accepted V2.4 holdout evidence in
+`artifacts/validation_extended_v2_holdout`. The original 12/12 replacement gate
+was not met; the presentation reports the verified 11/12 result explicitly.
 
 ## Current status
 
 - `ModelSentry_Presentation_DRAFT.pptx`: editable five-slide presentation draft.
 - `ModelSentry_Submission_DRAFT.pdf`: matching five-page competition submission draft.
-- `dashboard_snapshot.png`: static snapshot generated from the corrected evidence.
-- `baseline_v1_manifest.json`: source and evidence SHA-256 hashes.
-- `ModelSentry_V1_Source.zip`: reproducible source package.
-- `ModelSentry_V1_Evidence.zip`: corrected validation evidence package.
+- `dashboard_snapshot.png`: static snapshot generated from V2.4 evidence.
+- `v2_holdout_comparison.png`: detector-mode holdout comparison.
+- `baseline_v1_manifest.json` and V1 archives: preserved historical packages.
 
-The PDF is deliberately watermarked as a draft until the following values are
-provided:
-
-- Team name and member names
-- University or organization
-- Repository URL
-- Backup demonstration video URL
-
-Regenerate the current internal PDF-only draft with:
-
-```powershell
-python tools/build_submission.py `
-  --team "TEAM NAME" `
-  --members "MEMBER ONE" "MEMBER TWO" `
-  --university "UNIVERSITY" `
-  --repo-url "https://..." `
-  --video-url "https://..."
-```
-
-The generated file remains named `ModelSentry_Submission_DRAFT.pdf` until the
-identity and links are reviewed. Rename it only after the final verification.
+The team identity, university, and repository URL are embedded. The PDF remains
+watermarked as a draft only because the public demonstration-video URL is still
+pending. `tools/build_submission.py` is retained only as the historical
+Baseline V1 PDF builder.
 
 Generate the editable presentation and matching PDF after uploading the video:
 
@@ -44,8 +27,9 @@ python tools/build_presentation.py --video-url "https://..."
 With a real video URL, this creates `ModelSentry_Presentation.pptx` and
 `ModelSentry_Submission.pdf` without the draft watermark.
 
-## Baseline isolation rule
+## Evidence isolation rule
 
-Do not overwrite `artifacts/validation_corrected` during Extended V2 work. New
-experiments must write to a separate output directory and may replace Baseline
-V1 only after passing the documented acceptance gate.
+Do not overwrite `artifacts/validation_corrected` or
+`artifacts/validation_extended_v2_holdout`. New experiments must write to a
+separate output directory. The accepted V2.4 record is documented in
+`docs/V2_HOLDOUT_RESULTS.md`.

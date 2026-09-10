@@ -1,8 +1,8 @@
 # V2 Development Results
 
 These are development results, not final submission claims. Enhanced policy
-v2.4 was designed while inspecting seeds 42, 7, and 123. Final V2 evaluation
-must use untouched holdout seeds.
+v2.4 was designed while inspecting seeds 42, 7, and 123. The completed holdout
+is documented separately in `docs/V2_HOLDOUT_RESULTS.md`.
 
 ## Protocol
 
@@ -43,9 +43,10 @@ The quick victim accuracy is approximately 76%, so these fidelity values are not
 comparable to the eight-epoch Baseline V1 evidence. They validate the V2 harness
 and policy direction only.
 
-## Holdout gate
+## Holdout outcome
 
-Run the full eight-epoch protocol on untouched seeds 314, 2718, and 1618. Do not
-replace Baseline V1 unless enhanced V2 detects all required attack categories,
-does not worsen benign mitigation, lowers attacker fidelity, and remains
-reproducible from its manifest.
+The development result of 12/12 detections did not reproduce perfectly on the
+untouched holdout. The frozen eight-epoch holdout detected 11/12 attacks,
+mitigated 0/90 benign sessions, and reached 71.78% mean final fidelity. One
+slow-adaptive run was missed. See `docs/V2_HOLDOUT_RESULTS.md` for the accepted
+claim and manifest details.

@@ -21,7 +21,7 @@ becomes useful."
 1. Show the saved, reproducible undefended run.
 2. Explain that API answers become labels for a different surrogate model.
 3. Point to fidelity increasing with query budget.
-4. State the measured final fidelity from the verified Colab summary.
+4. State the measured 71.78% mean final fidelity from the verified V2.4 holdout.
 
 ## 1:40-2:40 - Same attack with ModelSentry
 
@@ -33,20 +33,20 @@ becomes useful."
 
 ## 2:40-3:20 - Security outcome
 
-1. Show the defended and undefended fidelity curves together.
-2. Mark the mean query at first alert.
-3. State responses prevented and fidelity reduction using final verified values.
-4. Show detection rate and benign false-positive rate across all seeds.
+1. Show the four-mode holdout comparison.
+2. State that Enhanced V2.4 detected 11/12 attack runs.
+3. Show that none of 90 benign sessions was mitigated.
+4. Disclose that one slow-adaptive run on seed 1618 was missed.
 
 ## 3:20-3:45 - Honest conclusion
 
-"ModelSentry does not claim that model extraction is perfectly detectable.
-Patient in-distribution and distributed attackers remain difficult. Our result is
-an explainable early-warning and graduated-response layer, validated against a
-working extraction attack rather than suspicious traffic alone."
+"ModelSentry does not claim that model extraction is perfectly detectable. In
+the untouched holdout, Enhanced V2.4 detected 11 of 12 attacks and mitigated none
+of 90 benign sessions. It detected every tested fast, replay, and distributed
+run, but missed one slow-adaptive run. This is an explainable early-warning and
+graduated-response layer, not a guarantee."
 
 ## Backup order
 
-If live services fail, show `multi_seed_fidelity.png`, `per_seed_metrics.csv`,
-the dashboard screenshot, and the short recorded run. Do not rerun model training
-during judging.
+If live services fail, show `per_mode_metrics_v2.csv`, the V2 dashboard snapshot,
+and the short recorded run. Do not rerun model training during judging.

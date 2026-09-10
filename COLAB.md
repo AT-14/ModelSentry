@@ -58,3 +58,17 @@ python run_validation_v2.py --seeds 314 2718 1618 --epochs 8 \
 
 Treat `docs/V2_DEVELOPMENT_RESULTS.md` only as development evidence. Update final
 claims only after downloading and verifying the V2 holdout manifest.
+
+## Completed V2.4 run
+
+The final archive was generated from source revision
+`92a244ee98faa8b1dddf0770849ad4961f7fd79c`. All 88 manifested files passed
+SHA-256 verification. Enhanced V2.4 detected 11/12 attacks, mitigated 0/90
+benign sessions, and reached 71.78% mean final surrogate fidelity. The missed
+run was slow adaptive on seed 1618.
+
+Verify the downloaded archive with:
+
+```powershell
+python tools/verify_v2_evidence.py "$HOME\Downloads\modelsentry_v2_holdout.zip"
+```

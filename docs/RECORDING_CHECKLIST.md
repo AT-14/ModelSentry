@@ -19,8 +19,9 @@ python serve_api.py
 
 Verify the dashboard, `http://127.0.0.1:8000/health`, and
 `http://127.0.0.1:8000/docs` before recording. Close notifications and unrelated
-applications. Keep `artifacts/validation_corrected` as the source of aggregate
-claims.
+applications. Keep `artifacts/validation_extended_v2_holdout` as the source of
+V2.4 aggregate claims and `artifacts/validation_corrected` unchanged as the
+historical Baseline V1 source.
 
 ## Recording order
 
@@ -29,11 +30,12 @@ claims.
 3. Show the saved undefended extraction curve reaching high fidelity.
 4. Replay or show the identical defended campaign and its alert reasons.
 5. Show throttle/block enforcement and the responses prevented.
-6. End on the three-seed results and state the low-rate/distributed limitation.
+6. End on 11/12 detections and 0/90 benign mitigations, then state that one
+   slow-adaptive run was missed.
 
 Use `docs/DEMO_SCRIPT.md` as the spoken script. If the live service fails, switch
-to `submission/dashboard_snapshot.png` and
-`artifacts/validation_corrected/multi_seed_fidelity.png` rather than retraining.
+to `submission/dashboard_snapshot.png` and the saved V2 holdout comparison
+rather than retraining.
 
 ## After upload
 

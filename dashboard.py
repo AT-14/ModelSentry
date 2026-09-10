@@ -14,6 +14,8 @@ VALIDATION_DIR = (
     else ARTIFACTS / "validation"
 )
 VALIDATION_SUMMARY = VALIDATION_DIR / "validation_summary.json"
+V2_HOLDOUT_DIR = ARTIFACTS / "validation_extended_v2_holdout"
+V2_HOLDOUT_SUMMARY = V2_HOLDOUT_DIR / "validation_summary_v2.json"
 
 st.set_page_config(page_title="ModelSentry", page_icon="MS", layout="wide")
 st.markdown(
@@ -130,10 +132,58 @@ with overview_tab:
         )
         st.dataframe(benign_table, hide_index=True, width="stretch")
 
-    if VALIDATION_SUMMARY.exists():
+    if V2_HOLDOUT_SUMMARY.exists():
+        with V2_HOLDOUT_SUMMARY.open(encoding="utf-8") as handle:
+            validation = json.load(handle)
+        enhanced = validation["mode_overview"]["enhanced"]
+        st.subheader("Frozen V2.4 holdout")
+        validation_columns = st.columns(4)
+        validation_columns[0].metric(
+            "Attacks detected",
+            f"{enhanced['attack_runs_detected']}/{enhanced['attack_runs_tested']}",
+        )
+        validation_columns[1].metric(
+            "Benign sessions mitigated",
+            f"{enhanced['benign_sessions_mitigated']}/{enhanced['benign_sessions_tested']}",
+        )
+        validation_columns[2].metric(
+            "Mean final fidelity",
+            f"{enhanced['final_fidelity']['mean']:.2%}",
+        )
+        validation_columns[3].metric(
+            "API p50 latency",
+            f"{validation['latency']['enhanced/api_in_process']['p50_ms']['mean']:.2f} ms",
+        )
+        comparison = pd.DataFrame(
+            [
+                {
+                    "Mode": mode.replace("_", " ").title(),
+                    "Attack detection": values["attack_detection_rate"],
+                    "Benign mitigation": values["benign_false_positive_rate"],
+                    "Final fidelity": values["final_fidelity"]["mean"],
+                }
+                for mode, values in validation["mode_overview"].items()
+            ]
+        )
+        st.dataframe(
+            comparison.style.format(
+                {
+                    "Attack detection": "{:.1%}",
+                    "Benign mitigation": "{:.1%}",
+                    "Final fidelity": "{:.2%}",
+                }
+            ),
+            hide_index=True,
+            width="stretch",
+        )
+        st.warning(
+            "Honest limit: Enhanced V2.4 detected 11 of 12 attacks. The missed "
+            "run was slow adaptive on holdout seed 1618."
+        )
+    elif VALIDATION_SUMMARY.exists():
         with VALIDATION_SUMMARY.open(encoding="utf-8") as handle:
             validation = json.load(handle)
-        st.subheader("Frozen multi-seed validation")
+        st.subheader("Historical Baseline V1 validation")
         validation_columns = st.columns(4)
         validation_columns[0].metric("Runs", validation["runs"])
         validation_columns[1].metric("Detection rate", f"{validation['detection_rate']:.1%}")

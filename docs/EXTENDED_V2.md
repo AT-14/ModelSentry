@@ -1,8 +1,8 @@
 # Extended V2 Validation
 
-Extended V2 is an isolated experimental track. It must not overwrite or be
-presented as a replacement for the verified Baseline V1 evidence until its
-acceptance gate passes.
+Extended V2 is an isolated experimental track. Its final v2.4 holdout is
+complete and documented in `docs/V2_HOLDOUT_RESULTS.md`. It must not overwrite
+the verified Baseline V1 evidence.
 
 ## Added evidence
 
@@ -69,3 +69,11 @@ three independent seeds:
 - Mean defended final fidelity is no higher than Baseline V1.
 - Results reproduce from a clean run and the output manifest matches.
 - Latency and residual low-rate/distributed risks are stated explicitly.
+
+## Final decision
+
+The frozen holdout detected 11/12 attacks, mitigated 0/90 benign sessions, and
+reached 71.78% mean final surrogate fidelity. It therefore did not meet the
+original 12/12 replacement gate. The team accepts v2.4 as the final extended
+result, reports the missed slow-adaptive run explicitly, and retains Baseline V1
+as the gate-qualified baseline.

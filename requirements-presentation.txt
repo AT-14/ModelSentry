@@ -1,4 +1,6 @@
 python-pptx>=1.0,<2
 qrcode[pil]>=8,<9
+matplotlib>=3.8,<4
+pandas>=2.2,<3
 pywin32>=306; platform_system == "Windows"
 pypdf>=6,<7
