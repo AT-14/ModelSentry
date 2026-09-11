@@ -520,10 +520,10 @@ def add_slide_five(prs: Presentation, dashboard_path: Path, qr_path: Path, video
     add_text(slide, "SOURCE CODE", 10.56, 5.35, 1.53, 0.22, 8, TEAL, True)
     add_text(slide, "github.com/AT-14/ModelSentry", 10.56, 5.65, 1.55, 0.40, 6.8, TEAL)
     add_link_overlay(slide, 10.50, 5.58, 1.70, 0.48, REPOSITORY)
-    video_text = "Demo video: link pending" if draft else "Demo video: open recording"
+    video_text = "Demo video: link pending" if draft else "Demo video: click here to watch"
     add_text(slide, video_text, 0.74, 6.48, 5.3, 0.24, 8, RED if draft else TEAL, True)
     if not draft:
-        add_link_overlay(slide, 0.68, 6.41, 2.25, 0.38, video_url)
+        add_link_overlay(slide, 0.68, 6.41, 3.05, 0.38, video_url)
     set_notes(
         slide,
         "[Timing: 2:40-3:25]\nClose with three points. ModelSentry provides explainable warning, graduated containment, and an honest measured boundary. Name the exact gap: one slow-adaptive run was missed even though all fast, replay, and distributed runs were detected. Briefly give the production roadmap. Invite judges to scan the repository QR code. Finish: ModelSentry turns model extraction from an invisible billing pattern into an observable security incident.\n\n[Backup demo order]\nShow the healthy API, legitimate interactive and batch clients, alert reasons, and the frozen V2.4 aggregate result. If live services fail, use the saved dashboard snapshot and comparison chart.",

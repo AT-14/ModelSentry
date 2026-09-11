@@ -29,7 +29,8 @@ runs reuse the mode- and seed-specific checkpoint in `artifacts/`. Each new
 checkpoint includes JSON metadata and a SHA-256 checksum for safe transfer from
 Colab or another team member's computer.
 
-Start the Enhanced V2.4 HTTP API after the checkpoint exists:
+After the quick start creates the checkpoint, run the jury scenario in three
+terminals. Terminal 1 starts the Enhanced V2.4 HTTP API:
 
 ```powershell
 python serve_api.py --reset-db --require-checkpoint --demo-reset-token modelsentry-demo
@@ -37,26 +38,26 @@ python serve_api.py --reset-db --require-checkpoint --demo-reset-token modelsent
 
 Open `http://127.0.0.1:8765/docs` for the interactive API documentation.
 
-View results from the most recent experiment:
+Terminal 2 opens the live dashboard:
 
 ```powershell
 streamlit run dashboard.py
 ```
 
-In another terminal, prove the required live sequence over HTTP:
+Terminal 3 runs the complete HTTP scenario twice, including normal traffic,
+extraction detection, and malformed-input handling:
 
 ```powershell
-python run_live_traffic.py reset
-python run_live_traffic.py normal
-python run_live_traffic.py attack
-python run_live_traffic.py invalid
+python run_live_traffic.py all
+python run_live_traffic.py all
 ```
 
 The dashboard refreshes every 0.5 seconds. Normal traffic remains green, the
 replay-style extraction run alerts at query 102, and the invalid request returns
-HTTP 422 without stopping the API. Use `python run_live_traffic.py all` for a
-single-command traffic run. See `docs/LIVE_DEMO_VERIFICATION.md` for the
-two-run wall-clock verification.
+HTTP 422 without stopping the API. The second command resets and repeats the
+scenario to prove clean rerun behavior. Individual phases remain available as
+`reset`, `normal`, `attack`, and `invalid`. See
+`docs/LIVE_DEMO_VERIFICATION.md` for the two-run wall-clock verification.
 
 Run a three-seed local validation with reduced settings:
 
