@@ -6,7 +6,7 @@ import pymupdf
 
 
 REPOSITORY = "https://github.com/AT-14/ModelSentry"
-VIDEO_URL = "https://raw.githubusercontent.com/AT-14/ModelSentry/main/submission/ModelSentry_V2.4_Demo_Team_TSA.mp4"
+VIDEO_URL = "https://cdn.jsdelivr.net/gh/AT-14/ModelSentry@1f484ca0feb05d83714c94e5caa656039add3890/submission/ModelSentry_V2.4_Demo_Team_TSA.mp4"
 
 
 def validate_public_url(value: str) -> str:
