@@ -54,6 +54,21 @@ OBS Studio is recommended. Windows Snipping Tool screen recording or Xbox Game
 Bar (`Win+Alt+R`) is also acceptable. Record the screen and a clear microphone;
 do not add copyrighted music.
 
+For an automated browser recording with AI narration, run:
+
+```powershell
+pip install -r requirements.txt -r requirements-video.txt
+python -m playwright install chromium ffmpeg
+python run_demo.py --quick
+python tools/build_demo_video.py
+```
+
+The first run downloads Fashion-MNIST and creates the required local victim
+checkpoint. The video command starts the local services, records authentic HTTP
+traffic and dashboard updates, generates disclosed AI narration through the
+online Edge TTS service, and writes
+`submission/ModelSentry_Demo_DRAFT.mp4`.
+
 Use this order:
 
 | Time | Show and say |

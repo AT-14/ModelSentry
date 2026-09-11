@@ -1,17 +1,18 @@
 import argparse
 import json
 from pathlib import Path
+from urllib.parse import urlparse
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pymupdf
 import qrcode
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_AUTO_SHAPE_TYPE, MSO_CONNECTOR
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
-from pypdf import PdfReader, PdfWriter
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,10 +43,18 @@ MEMBERS = (
 UNIVERSITY = "United Arab Emirates University"
 REPOSITORY = "https://github.com/AT-14/ModelSentry"
 SOURCE_REVISION = "92a244ee98faa8b1dddf0770849ad4961f7fd79c"
+VIDEO_LINK_PENDING = "VIDEO LINK PENDING"
 
 
 def rgb(value: str) -> RGBColor:
     return RGBColor.from_string(value)
+
+
+def validate_public_url(value: str) -> str:
+    parsed = urlparse(value)
+    if parsed.scheme != "https" or not parsed.netloc:
+        raise ValueError("The video URL must be a public HTTPS URL")
+    return value
 
 
 def add_text(
@@ -504,17 +513,27 @@ def add_slide_five(prs: Presentation, dashboard_path: Path, qr_path: Path, video
 
 
 def add_pdf_links(pdf_path: Path, video_url: str, draft: bool) -> None:
-    reader = PdfReader(pdf_path)
-    writer = PdfWriter()
-    writer.append_pages_from_reader(reader)
-    if reader.metadata:
-        writer.add_metadata(reader.metadata)
-    writer.add_uri(4, REPOSITORY, (678, 91, 897, 167))
+    document = pymupdf.open(pdf_path)
+    page = document[4]
+    height = page.rect.height
+    page.insert_link(
+        {
+            "kind": pymupdf.LINK_URI,
+            "from": pymupdf.Rect(678, height - 167, 897, height - 91),
+            "uri": REPOSITORY,
+        }
+    )
     if not draft:
-        writer.add_uri(4, video_url, (53, 48, 435, 74))
+        page.insert_link(
+            {
+                "kind": pymupdf.LINK_URI,
+                "from": pymupdf.Rect(53, height - 74, 435, height - 48),
+                "uri": video_url,
+            }
+        )
     temporary_path = pdf_path.with_suffix(".linked.pdf")
-    with temporary_path.open("wb") as handle:
-        writer.write(handle)
+    document.save(temporary_path, garbage=4, deflate=True)
+    document.close()
     temporary_path.replace(pdf_path)
 
 
@@ -541,10 +560,12 @@ def export_pdf(presentation_path: Path, pdf_path: Path, video_url: str, draft: b
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build ModelSentry PPTX and matching PDF")
-    parser.add_argument("--video-url", default="VIDEO LINK PENDING")
+    parser.add_argument("--video-url", default=VIDEO_LINK_PENDING)
     parser.add_argument("--skip-pdf", action="store_true")
     args = parser.parse_args()
-    draft = args.video_url == "VIDEO LINK PENDING"
+    draft = args.video_url == VIDEO_LINK_PENDING
+    if not draft:
+        args.video_url = validate_public_url(args.video_url)
 
     summary_path = EVIDENCE / "validation_summary_v2.json"
     metrics_path = EVIDENCE / "per_mode_metrics_v2.csv"
@@ -555,6 +576,7 @@ def main() -> None:
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
     frame = pd.read_csv(metrics_path)
     SUBMISSION.mkdir(parents=True, exist_ok=True)
+    print("Building presentation assets", flush=True)
     make_holdout_chart(summary, chart_path)
     make_dashboard_snapshot(summary, dashboard_path)
     qr_path = SUBMISSION / "repository_qr.png"
@@ -573,10 +595,12 @@ def main() -> None:
     add_slide_three(presentation, draft)
     add_slide_four(presentation, summary, frame, chart_path, draft)
     add_slide_five(presentation, dashboard_path, qr_path, args.video_url, draft)
+    print("Built five presentation slides", flush=True)
 
     suffix = "_DRAFT" if draft else ""
     presentation_path = SUBMISSION / f"ModelSentry_Presentation{suffix}.pptx"
     pdf_path = SUBMISSION / f"ModelSentry_Submission{suffix}.pdf"
+    print(f"Saving {presentation_path}", flush=True)
     presentation.save(presentation_path)
     print(f"Wrote {presentation_path}")
     if not args.skip_pdf:

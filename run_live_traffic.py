@@ -67,6 +67,7 @@ def run_attack_phase(
     client: httpx.Client,
     pool: torch.Tensor,
     maximum_queries: int,
+    delay_seconds: float = 0.0,
 ) -> LiveAttackResult:
     print(
         "Starting extraction traffic: repeated diverse pool, maximum "
@@ -92,6 +93,8 @@ def run_attack_phase(
             )
             print("Trigger: " + "; ".join(outcome.reasons))
             return outcome
+        if delay_seconds:
+            time.sleep(delay_seconds)
     raise RuntimeError(f"No extraction alert within {maximum_queries} requests")
 
 
@@ -122,6 +125,7 @@ def main() -> None:
     parser.add_argument("--normal-delay", type=float, default=0.05)
     parser.add_argument("--attack-pool-size", type=int, default=50)
     parser.add_argument("--max-attack-queries", type=int, default=150)
+    parser.add_argument("--attack-delay", type=float, default=0.0)
     args = parser.parse_args()
 
     with httpx.Client(base_url=args.base_url, timeout=20.0) as client:
@@ -147,7 +151,12 @@ def main() -> None:
                 attack_pool = dataset_images(
                     partitions.attack_pool, args.attack_pool_size
                 )
-                run_attack_phase(client, attack_pool, args.max_attack_queries)
+                run_attack_phase(
+                    client,
+                    attack_pool,
+                    args.max_attack_queries,
+                    args.attack_delay,
+                )
         if args.phase in {"invalid", "all"}:
             check_unexpected_input(client)
 
