@@ -517,7 +517,7 @@ def add_slide_five(prs: Presentation, dashboard_path: Path, qr_path: Path, video
     add_text(slide, "Identity resolver  ->  streaming storage  ->  drift review  ->  bounded history  ->  analyst feedback", 2.67, 5.37, 6.14, 0.42, 9.2, INK)
     add_panel(slide, 9.42, 5.18, 3.04, 1.05)
     slide.shapes.add_picture(str(qr_path), Inches(9.61), Inches(5.31), width=Inches(0.78), height=Inches(0.78))
-    add_text(slide, "SOURCE CODE", 10.56, 5.35, 1.53, 0.22, 8, TEAL, True)
+    add_text(slide, "SOURCE + RUN GUIDE", 10.56, 5.35, 1.53, 0.22, 7.2, TEAL, True)
     add_text(slide, "github.com/AT-14/ModelSentry", 10.56, 5.65, 1.55, 0.40, 6.8, TEAL)
     add_link_overlay(slide, 10.50, 5.58, 1.70, 0.48, REPOSITORY)
     video_text = "Demo video: link pending" if draft else "Demo video: click here to watch"

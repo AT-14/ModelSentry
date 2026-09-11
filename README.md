@@ -52,11 +52,15 @@ python run_live_traffic.py all
 python run_live_traffic.py all
 ```
 
-The dashboard refreshes every 0.5 seconds. Normal traffic remains green, the
-replay-style extraction run alerts at query 102, and the invalid request returns
-HTTP 422 without stopping the API. The second command resets and repeats the
-scenario to prove clean rerun behavior. Individual phases remain available as
-`reset`, `normal`, `attack`, and `invalid`. See
+Expected results:
+
+- All 75 normal requests remain allowed and the dashboard stays green.
+- Replay-style extraction triggers a throttle alert at attack query 102.
+- Malformed input returns HTTP 422 and the API remains healthy.
+- The second `all` command resets and completes the same scenario cleanly.
+
+The dashboard refreshes every 0.5 seconds. Individual phases remain available
+as `reset`, `normal`, `attack`, and `invalid`. See
 `docs/LIVE_DEMO_VERIFICATION.md` for the two-run wall-clock verification.
 
 Run a three-seed local validation with reduced settings:
