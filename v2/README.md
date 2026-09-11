@@ -44,8 +44,11 @@ the V2 baseline-full detector:
 
 ## Verify or reproduce
 
+Download the [frozen V2.4 evidence archive](../modelsentry_v2_holdout.zip), then
+verify it directly:
+
 ```powershell
-python tools/verify_v2_evidence.py artifacts/validation_extended_v2_holdout
+python tools/verify_v2_evidence.py modelsentry_v2_holdout.zip
 python run_validation_v2.py --quick --seeds 42 --epochs 1 --max-queries 500
 ```
 

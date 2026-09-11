@@ -90,9 +90,9 @@ def add_text(
     run.font.name = font
     run.font.size = Pt(size)
     run.font.bold = bold
-    run.font.color.rgb = rgb(color)
     if hyperlink:
         run.hyperlink.address = hyperlink
+    run.font.color.rgb = rgb(color)
     return box
 
 
@@ -110,6 +110,21 @@ def add_panel(slide, x: float, y: float, width: float, height: float, fill: str 
     shape.line.width = Pt(1)
     shape.adjustments[0] = 0.08
     return shape
+
+
+def add_link_overlay(
+    slide, x: float, y: float, width: float, height: float, url: str
+) -> None:
+    shape = slide.shapes.add_shape(
+        MSO_AUTO_SHAPE_TYPE.RECTANGLE,
+        Inches(x),
+        Inches(y),
+        Inches(width),
+        Inches(height),
+    )
+    shape.fill.background()
+    shape.line.fill.background()
+    shape.click_action.hyperlink.address = url
 
 
 def add_metric(slide, x: float, y: float, width: float, value: str, label: str, accent: str = GOLD):
@@ -158,8 +173,8 @@ def add_flow(slide, items: tuple[tuple[str, str], ...], y: float) -> None:
             arrow.line.end_arrowhead = True
 
 
-def set_notes(slide, text: str) -> None:
-    slide.notes_slide.notes_text_frame.text = text
+def set_notes(slide, _text: str) -> None:
+    slide.notes_slide.notes_text_frame.text = ""
 
 
 def make_qr(url: str, destination: Path) -> None:
@@ -190,7 +205,7 @@ def make_holdout_chart(summary: dict, destination: Path) -> None:
         benign,
         width,
         color=f"#{TEAL}",
-        label="Benign false-positive rate",
+        label="Benign mitigation rate",
     )
     axis.bar_label(
         detection_bars,
@@ -253,7 +268,7 @@ def make_dashboard_snapshot(summary: dict, destination: Path) -> None:
         ),
         (
             f"{enhanced['benign_sessions_mitigated']}/{enhanced['benign_sessions_tested']}",
-            "BENIGN FALSE POSITIVES",
+            "BENIGN SESSIONS MITIGATED",
         ),
         (f"{enhanced['final_fidelity']['mean']:.2%}", "MEAN FINAL FIDELITY"),
         (f"{latency['p50_ms']['mean']:.2f} ms", "API P50 LATENCY"),
@@ -335,7 +350,7 @@ def add_slide_one(prs: Presentation, summary: dict, draft: bool) -> None:
     enhanced = summary["mode_overview"]["enhanced"]
     api_latency = summary["latency"]["enhanced/api_in_process"]["p50_ms"]["mean"]
     add_metric(slide, 0.55, 3.05, 2.85, "11/12", "Attack runs detected")
-    add_metric(slide, 3.57, 3.05, 2.85, "0/90", "Benign false positives", TEAL)
+    add_metric(slide, 3.57, 3.05, 2.85, "0/90", "Benign sessions mitigated", TEAL)
     add_metric(
         slide,
         6.59,
@@ -361,7 +376,7 @@ def add_slide_two(prs: Presentation, draft: bool) -> None:
     add_base(slide, "Project objective", "A prediction API can become a free training set", 2, draft)
     add_text(
         slide,
-        "A black-box attacker needs neither the weights nor the original training data. They need enough carefully selected input-output pairs to train a substitute.",
+        "Modern pay-per-query APIs can become labeling services: attackers collect input-output pairs to train a substitute without the weights or original training data.",
         0.55,
         1.37,
         11.8,
@@ -381,13 +396,13 @@ def add_slide_two(prs: Presentation, draft: bool) -> None:
     )
     add_panel(slide, 0.55, 4.05, 3.62, 1.65)
     add_text(slide, "BUYER / USER", 0.77, 4.31, 2.8, 0.25, 8, TEAL, True)
-    add_text(slide, "Government AI API owners and SOC analysts", 0.77, 4.72, 3.0, 0.66, 11, INK, True)
+    add_text(slide, "Government and commercial AI API owners; SOC and API-security teams", 0.77, 4.72, 3.0, 0.66, 10.5, INK, True)
     add_panel(slide, 4.36, 4.05, 3.62, 1.65)
     add_text(slide, "BUSINESS OUTCOME", 4.58, 4.31, 2.8, 0.25, 8, TEAL, True)
     add_text(slide, "Protect model IP and API revenue while preserving legitimate access", 4.58, 4.72, 3.0, 0.66, 11, INK, True)
     add_panel(slide, 8.17, 4.05, 4.29, 1.65, PANEL_LIGHT)
     add_text(slide, "THE GAP", 8.39, 4.31, 2.8, 0.25, 8, GOLD, True)
-    add_text(slide, "Augments rate limits and manual review by correlating the information value and structure of query sequences.", 8.39, 4.72, 3.65, 0.70, 11, INK, True)
+    add_text(slide, "Replaces manual query-log review with real-time behavioral containment; complements WAFs and rate limits.", 8.39, 4.72, 3.65, 0.70, 10.5, INK, True)
     set_notes(
         slide,
         "[Timing: 0:35-1:05]\nWalk left to right through the extraction loop. The attacker queries, collects labels, trains a different model, and can eventually replace paid API access. Explain the buyer and business impact. Emphasize the design gap: rate limiting is useful but cannot characterize the information value and structure of a query sequence. Transition: ModelSentry converts that sequence into persistent evidence.",
@@ -400,7 +415,7 @@ def add_slide_three(prs: Presentation, draft: bool) -> None:
     add_flow(
         slide,
         (
-            ("FastAPI", "Validated image and API identity"),
+            ("FastAPI", "Validated image and API-key context"),
             ("Victim CNN", "Label, confidence, margin, embedding"),
             ("50-query monitor", "Per-key rolling behavioral evidence"),
             ("Policy + dashboard", "Allow, observe, throttle, block; persist evidence"),
@@ -413,7 +428,7 @@ def add_slide_three(prs: Presentation, draft: bool) -> None:
         ("DIVERSITY", "Embedding exploration"),
         ("REPLAY", "Exact request repetition"),
         ("BOUNDARY", "Low-margin probing"),
-        ("LINKAGE", "Coordinated API accounts"),
+        ("LINKAGE", "Simulated account groups"),
     )
     for index, (heading, detail) in enumerate(signals):
         x = 0.55 + index * 2.40
@@ -421,10 +436,10 @@ def add_slide_three(prs: Presentation, draft: bool) -> None:
         add_text(slide, heading, x + 0.15, 3.75, 1.8, 0.22, 8.5, GOLD, True)
         add_text(slide, detail, x + 0.15, 4.10, 1.8, 0.30, 8, MUTED)
     add_panel(slide, 0.55, 5.03, 11.91, 1.22, PANEL_LIGHT)
-    add_text(slide, "INFORMATION ACQUISITION BUDGET", 0.78, 5.31, 3.2, 0.23, 8.5, TEAL, True)
+    add_text(slide, "INFORMATION ACQUISITION PROXY", 0.78, 5.31, 3.2, 0.23, 8.5, TEAL, True)
     add_text(
         slide,
-        "Short-window model-aware signals remain telemetry until confirmed by persistent, repeated, boundary-heavy, extreme-rate, or linked-account evidence.",
+        "Short-window signals remain telemetry until confirmed by persistent, repeated, boundary-heavy, extreme-rate, or simulated account-group evidence.",
         4.15,
         5.25,
         7.85,
@@ -458,7 +473,7 @@ def add_slide_four(
         8.28,
         1.40,
         4.18,
-        f"{accuracy.mean():.2%} +/- {accuracy.std() * 100:.2f}",
+        f"{accuracy.mean():.2%} +/- {accuracy.std() * 100:.2f} pp",
         "Victim validation accuracy",
         TEAL,
     )
@@ -468,13 +483,13 @@ def add_slide_four(
         8.28,
         3.90,
         4.18,
-        f"{enhanced['final_fidelity']['mean']:.2%}",
+        f"{enhanced['final_fidelity']['mean']:.2%} +/- {enhanced['final_fidelity']['std'] * 100:.2f} pp",
         "Mean final fidelity; lower is better",
         TEAL,
     )
     api_p95 = summary["latency"]["enhanced/api_in_process"]["p95_ms"]["mean"]
     add_metric(slide, 8.28, 5.15, 4.18, f"{api_latency:.2f} / {api_p95:.2f} ms", "API p50 / p95")
-    add_text(slide, "Frozen 3-seed holdout  |  disjoint train/calibration/query/benign/fidelity splits  |  different SGD surrogate  |  12 attack runs", 0.75, 6.53, 11.8, 0.25, 8, MUTED, align=PP_ALIGN.CENTER)
+    add_text(slide, "Frozen 3-seed Fashion-MNIST holdout  |  simulated traffic  |  disjoint splits  |  different SGD surrogate  |  12 attack runs", 0.75, 6.53, 11.8, 0.25, 8, MUTED, align=PP_ALIGN.CENTER)
     set_notes(
         slide,
         "[Timing: 1:50-2:40]\nState the methodology before the result: three untouched holdout seeds, 40,000 victim-training images, eight epochs, four attack types, four detector modes, and 90 benign sessions per mode. Enhanced V2.4 detected 11 of 12 attack runs and mitigated none of the 90 benign sessions. Mean final surrogate fidelity was 71.78 percent. The development result did not reproduce perfectly: one slow-adaptive run was missed. Transition: the prototype is useful, but its limits are explicit.",
@@ -503,9 +518,12 @@ def add_slide_five(prs: Presentation, dashboard_path: Path, qr_path: Path, video
     add_panel(slide, 9.42, 5.18, 3.04, 1.05)
     slide.shapes.add_picture(str(qr_path), Inches(9.61), Inches(5.31), width=Inches(0.78), height=Inches(0.78))
     add_text(slide, "SOURCE CODE", 10.56, 5.35, 1.53, 0.22, 8, TEAL, True)
-    add_text(slide, "github.com/AT-14/ModelSentry", 10.56, 5.65, 1.55, 0.40, 6.8, INK, hyperlink=REPOSITORY)
+    add_text(slide, "github.com/AT-14/ModelSentry", 10.56, 5.65, 1.55, 0.40, 6.8, TEAL)
+    add_link_overlay(slide, 10.50, 5.58, 1.70, 0.48, REPOSITORY)
     video_text = "Demo video: link pending" if draft else "Demo video: open recording"
-    add_text(slide, video_text, 0.74, 6.48, 5.3, 0.24, 8, RED if draft else TEAL, True, hyperlink=None if draft else video_url)
+    add_text(slide, video_text, 0.74, 6.48, 5.3, 0.24, 8, RED if draft else TEAL, True)
+    if not draft:
+        add_link_overlay(slide, 0.68, 6.41, 2.25, 0.38, video_url)
     set_notes(
         slide,
         "[Timing: 2:40-3:25]\nClose with three points. ModelSentry provides explainable warning, graduated containment, and an honest measured boundary. Name the exact gap: one slow-adaptive run was missed even though all fast, replay, and distributed runs were detected. Briefly give the production roadmap. Invite judges to scan the repository QR code. Finish: ModelSentry turns model extraction from an invisible billing pattern into an observable security incident.\n\n[Backup demo order]\nShow the healthy API, legitimate interactive and batch clients, alert reasons, and the frozen V2.4 aggregate result. If live services fail, use the saved dashboard snapshot and comparison chart.",
@@ -516,14 +534,16 @@ def add_pdf_links(pdf_path: Path, video_url: str, draft: bool) -> None:
     document = pymupdf.open(pdf_path)
     page = document[4]
     height = page.rect.height
-    page.insert_link(
-        {
-            "kind": pymupdf.LINK_URI,
-            "from": pymupdf.Rect(678, height - 167, 897, height - 91),
-            "uri": REPOSITORY,
-        }
-    )
-    if not draft:
+    existing = {link.get("uri") for link in page.get_links()}
+    if REPOSITORY not in existing:
+        page.insert_link(
+            {
+                "kind": pymupdf.LINK_URI,
+                "from": pymupdf.Rect(678, height - 167, 897, height - 91),
+                "uri": REPOSITORY,
+            }
+        )
+    if not draft and video_url not in existing:
         page.insert_link(
             {
                 "kind": pymupdf.LINK_URI,
@@ -589,6 +609,8 @@ def main() -> None:
     presentation.core_properties.subject = "School of Cyber Defence 2026"
     presentation.core_properties.author = f"{TEAM}: {', '.join(MEMBERS)}"
     presentation.core_properties.keywords = "model extraction, API security, cybersecurity"
+    presentation.core_properties.comments = ""
+    presentation.core_properties.last_modified_by = TEAM
 
     add_slide_one(presentation, summary, draft)
     add_slide_two(presentation, draft)

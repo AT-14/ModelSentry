@@ -14,3 +14,5 @@ submission/*.png
 submission/*.json
 submission/*.mp4
 submission/video_work/
+!modelsentry_v2_holdout.zip
+!submission/ModelSentry_V2.4_Demo_Team_TSA.mp4

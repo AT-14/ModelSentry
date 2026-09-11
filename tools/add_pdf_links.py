@@ -6,7 +6,7 @@ import pymupdf
 
 
 REPOSITORY = "https://github.com/AT-14/ModelSentry"
-VIDEO_URL = "https://drive.google.com/file/d/16yUgLW3690mo8zR9VjFixuZROb7sJyWL/view"
+VIDEO_URL = "https://raw.githubusercontent.com/AT-14/ModelSentry/main/submission/ModelSentry_V2.4_Demo_Team_TSA.mp4"
 
 
 def validate_public_url(value: str) -> str:
@@ -28,20 +28,23 @@ def main() -> None:
         raise ValueError(f"Expected five pages, found {document.page_count}")
     page = document[4]
     height = page.rect.height
-    page.insert_link(
-        {
-            "kind": pymupdf.LINK_URI,
-            "from": pymupdf.Rect(678, height - 167, 897, height - 91),
-            "uri": REPOSITORY,
-        }
-    )
-    page.insert_link(
-        {
-            "kind": pymupdf.LINK_URI,
-            "from": pymupdf.Rect(53, height - 74, 435, height - 48),
-            "uri": video_url,
-        }
-    )
+    existing = {link.get("uri") for link in page.get_links()}
+    if REPOSITORY not in existing:
+        page.insert_link(
+            {
+                "kind": pymupdf.LINK_URI,
+                "from": pymupdf.Rect(678, height - 167, 897, height - 91),
+                "uri": REPOSITORY,
+            }
+        )
+    if video_url not in existing:
+        page.insert_link(
+            {
+                "kind": pymupdf.LINK_URI,
+                "from": pymupdf.Rect(53, height - 74, 435, height - 48),
+                "uri": video_url,
+            }
+        )
     temporary = args.pdf.with_suffix(".linked.pdf")
     document.save(temporary, garbage=4, deflate=True)
     document.close()

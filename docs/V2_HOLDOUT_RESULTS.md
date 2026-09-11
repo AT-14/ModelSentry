@@ -62,8 +62,8 @@ guaranteed zero false-positive rate.
 
 ## Evidence
 
-- Local archive: `modelsentry_v2_holdout.zip`
-- Archive SHA-256: `9ec0f0334116344142ba2feecf31eb15ce0834c164c83f7bf75b97e3be2ebcf5`
+- Evidence archive: [`modelsentry_v2_holdout.zip`](../modelsentry_v2_holdout.zip)
+- Archive SHA-256: `d2361f178c02f9f8034ba14260eaa3f28a2c6ba82a4b9e58bb76e7555be8b445`
 - Extracted directory: `artifacts/validation_extended_v2_holdout`
 - Manifest: `artifacts/validation_extended_v2_holdout/manifest_v2.json`
 - Summary: `artifacts/validation_extended_v2_holdout/validation_summary_v2.json`

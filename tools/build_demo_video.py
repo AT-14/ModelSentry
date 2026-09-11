@@ -39,7 +39,7 @@ SUBMISSION = ROOT / "submission"
 WORK = SUBMISSION / "video_work"
 API_URL = "http://127.0.0.1:8765"
 DASHBOARD_URL = "http://127.0.0.1:8501"
-DEFAULT_OUTPUT = SUBMISSION / "ModelSentry_Demo_DRAFT.mp4"
+DEFAULT_OUTPUT = SUBMISSION / "ModelSentry_V2.4_Demo_Team_TSA.mp4"
 
 
 @dataclass(frozen=True)
@@ -69,8 +69,8 @@ SCENES = (
         "The prototype protects a Fashion-MNIST convolutional neural network behind "
         "a real FastAPI endpoint. Every request is validated, classified, and passed "
         "through a stateful monitor. The monitor combines query rate, embedding "
-        "diversity, exact repetition, decision-boundary activity, and linked-account "
-        "evidence. Its graduated policy can allow, observe, throttle, or block while "
+        "diversity, exact repetition, decision-boundary activity, and simulated "
+        "account-group evidence. Its graduated policy can allow, observe, throttle, or block while "
         "persisting explainable evidence for the dashboard.",
     ),
     Scene(
@@ -102,8 +102,8 @@ SCENES = (
         "The live demonstration is supported by a frozen three-seed holdout, not used "
         "for tuning. Four attack styles were evaluated: fast adaptive, slow adaptive, "
         "replay, and distributed extraction. Across twelve attack runs, Enhanced "
-        "Version Two Point Four detected eleven, while producing zero false positives "
-        "across ninety benign sessions. Mean final attacker fidelity was seventy-one "
+        "Version Two Point Four detected eleven, while mitigating none of ninety "
+        "benign sessions. Mean final attacker fidelity was seventy-one "
         "point seven eight percent. The manifest verifies all eighty-eight evidence "
         "files so the reported result remains auditable.",
     ),
@@ -112,7 +112,7 @@ SCENES = (
         "On identical Version Two traffic, the baseline-full detector found four of "
         "twelve attacks and incorrectly mitigated four of ninety benign sessions. "
         "Enhanced Version Two Point Four increased detection to eleven of twelve, "
-        "reduced benign false positives to zero, and lowered mean final attacker "
+        "reduced benign mitigations from four to zero, and lowered mean final attacker "
         "fidelity from eighty point nine two percent to seventy-one point seven eight "
         "percent. The limitation is explicit: one patient slow-adaptive run was not "
         "detected.",
@@ -125,8 +125,7 @@ SCENES = (
         "graduated containment. Production work would add enterprise identity "
         "resolution, streaming storage, traffic-drift review, and analyst feedback. "
         "The source code and reproducible evidence are available in the public "
-        "ModelSentry repository. Narration in this video was generated using artificial "
-        "intelligence; all software behavior, traffic, and results shown are authentic.",
+        "ModelSentry repository. All software behavior, traffic, and results shown are authentic.",
     ),
 )
 
@@ -339,7 +338,7 @@ def record_browser(
                 "Model IP defense control room",
                 "ModelSentry",
                 "Detect model-theft behavior and limit API leakage.",
-                (("11/12", "attacks detected"), ("0/90", "benign false positives"),
+                (("11/12", "attacks detected"), ("0/90", "benign sessions mitigated"),
                  ("71.78%", "mean final fidelity")),
             )
         )
@@ -402,7 +401,7 @@ def record_browser(
                 "Solution validation",
                 "Frozen three-seed holdout",
                 "Four detector modes were evaluated on identical attack and benign traffic.",
-                (("11/12", "enhanced detections"), ("0/90", "benign false positives"),
+                (("11/12", "enhanced detections"), ("0/90", "benign sessions mitigated"),
                  ("88/88", "manifest hashes verified")),
                 image=chart,
             )
@@ -415,7 +414,7 @@ def record_browser(
                 "Stronger detection, lower attacker fidelity",
                 "Baseline full and Enhanced V2.4 use the same V2 traffic and protocol.",
                 (("4/12 -> 11/12", "attack detection"),
-                 ("4/90 -> 0/90", "benign false positives"),
+                 ("4/90 -> 0/90", "benign sessions mitigated"),
                  ("80.92% -> 71.78%", "mean final fidelity")),
                 image=snapshot,
             )
@@ -432,7 +431,7 @@ def record_browser(
                  ("BLOCK", "continued abuse")),
                 image=qr,
                 image_height=330,
-                footer="AI narration | Authentic software results and screen capture",
+                footer="Authentic software results and screen capture",
             )
         )
         hold("conclusion", padding=1.5)
@@ -504,7 +503,7 @@ def mix_video(
             str(output),
         ]
     )
-    print("Combining browser capture and AI narration", flush=True)
+    print("Combining browser capture and narration", flush=True)
     subprocess.run(command, cwd=ROOT, check=True)
 
 
